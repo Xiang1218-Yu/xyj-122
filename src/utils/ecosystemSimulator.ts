@@ -100,7 +100,7 @@ export function simulateStep(
     if (!species) continue;
 
     let energy = organism.energy;
-    let age = organism.age + 1;
+    const age = organism.age + 1;
 
     if (age >= species.lifespan || energy <= 0) {
       toRemove.add(organism.id);
@@ -129,7 +129,6 @@ export function simulateStep(
           organismUpdate.state = 'eating';
         }
       } else {
-        energy += 0.08;
         organismUpdate.state = 'wandering';
         if (Math.random() < 0.02) {
           newVelocity.set(
