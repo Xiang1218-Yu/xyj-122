@@ -11,7 +11,7 @@ export function SpeciesToolbar() {
   const organisms = useEcosystemStore((s) => s.organisms);
 
   return (
-    <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10 flex flex-col gap-3">
+    <div className="absolute left-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-3 pb-48">
       {LEVEL_ORDER.map((level) => {
         const levelSpecies = SPECIES.filter((s) => s.trophicLevel === level);
         return (

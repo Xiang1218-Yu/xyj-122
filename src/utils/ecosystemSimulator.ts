@@ -14,6 +14,7 @@ function distance(a: THREE.Vector3, b: THREE.Vector3): number {
 function findNearestPrey(
   organism: Organism,
   allOrganisms: Organism[],
+  excludedIds: Set<string>,
 ): Organism | null {
   const species = getSpeciesById(organism.speciesId);
   if (!species || species.diet.length === 0) return null;
@@ -23,6 +24,7 @@ function findNearestPrey(
 
   for (const other of allOrganisms) {
     if (other.id === organism.id) continue;
+    if (excludedIds.has(other.id)) continue;
     if (!species.diet.includes(other.speciesId)) continue;
 
     const dist = distance(organism.position, other.position);
@@ -59,6 +61,28 @@ function findNearestPredator(
   return nearest;
 }
 
+function findNearestDead(
+  organism: Organism,
+  allOrganisms: Organism[],
+  dyingIds: Set<string>,
+): Organism | null {
+  let nearest: Organism | null = null;
+  let minDist = Infinity;
+
+  for (const other of allOrganisms) {
+    if (other.id === organism.id) continue;
+    if (!dyingIds.has(other.id)) continue;
+
+    const dist = distance(organism.position, other.position);
+    if (dist < minDist && dist < 3) {
+      minDist = dist;
+      nearest = other;
+    }
+  }
+
+  return nearest;
+}
+
 export function simulateStep(
   organisms: Organism[],
 ): {
@@ -66,41 +90,70 @@ export function simulateStep(
   toRemove: string[];
   toAdd: { speciesId: string; position: THREE.Vector3 }[];
 } {
-  const updates: { id: string; updates: Partial<Organism> }[] = [];
-  const toRemove: string[] = [];
+  const updates: Map<string, Partial<Organism>> = new Map();
+  const toRemove: Set<string> = new Set();
   const toAdd: { speciesId: string; position: THREE.Vector3 }[] = [];
+  const eatenPrey: Set<string> = new Set();
 
   for (const organism of organisms) {
     const species = getSpeciesById(organism.speciesId);
     if (!species) continue;
 
-    const newState: Partial<Organism> = {};
     let energy = organism.energy;
     let age = organism.age + 1;
 
     if (age >= species.lifespan || energy <= 0) {
-      toRemove.push(organism.id);
+      toRemove.add(organism.id);
       continue;
     }
 
     energy -= 0.05 + species.size * 0.02;
 
+    const organismUpdate: Partial<Organism> = {};
     const newPosition = organism.position.clone();
     const newVelocity = organism.velocity.clone();
 
-    if (species.trophicLevel !== 'producer' && species.speed > 0) {
-      const prey = findNearestPrey(organism, organisms);
+    if (species.trophicLevel === 'decomposer') {
+      const deadOrganism = findNearestDead(organism, organisms, toRemove);
+
+      if (deadOrganism && energy < species.energyValue * 0.8) {
+        organismUpdate.state = 'hunting';
+        organismUpdate.targetId = deadOrganism.id;
+        const huntDir = new THREE.Vector3()
+          .subVectors(deadOrganism.position, organism.position)
+          .normalize();
+        newVelocity.lerp(huntDir.multiplyScalar(species.speed), 0.1);
+
+        if (distance(organism.position, deadOrganism.position) < species.size * 1.5) {
+          energy += getSpeciesById(deadOrganism.speciesId)?.energyValue || 20;
+          organismUpdate.state = 'eating';
+        }
+      } else {
+        energy += 0.08;
+        organismUpdate.state = 'wandering';
+        if (Math.random() < 0.02) {
+          newVelocity.set(
+            (Math.random() - 0.5) * species.speed,
+            (Math.random() - 0.5) * species.speed * 0.5,
+            (Math.random() - 0.5) * species.speed,
+          );
+        }
+      }
+
+      newPosition.add(newVelocity);
+    } else if (species.trophicLevel !== 'producer' && species.speed > 0) {
+      const prey = findNearestPrey(organism, organisms, eatenPrey);
       const predator = findNearestPredator(organism, organisms);
 
       if (predator) {
-        newState.state = 'fleeing';
+        organismUpdate.state = 'fleeing';
         const fleeDir = new THREE.Vector3()
           .subVectors(organism.position, predator.position)
           .normalize();
         newVelocity.lerp(fleeDir.multiplyScalar(species.speed), 0.1);
       } else if (prey && energy < species.energyValue * 0.7) {
-        newState.state = 'hunting';
-        newState.targetId = prey.id;
+        organismUpdate.state = 'hunting';
+        organismUpdate.targetId = prey.id;
         const huntDir = new THREE.Vector3()
           .subVectors(prey.position, organism.position)
           .normalize();
@@ -108,11 +161,12 @@ export function simulateStep(
 
         if (distance(organism.position, prey.position) < species.size * 0.8) {
           energy += getSpeciesById(prey.speciesId)?.energyValue || 20;
-          toRemove.push(prey.id);
-          newState.state = 'eating';
+          eatenPrey.add(prey.id);
+          toRemove.add(prey.id);
+          organismUpdate.state = 'eating';
         }
       } else {
-        newState.state = 'wandering';
+        organismUpdate.state = 'wandering';
         if (Math.random() < 0.02) {
           newVelocity.set(
             (Math.random() - 0.5) * species.speed,
@@ -149,28 +203,28 @@ export function simulateStep(
         newVelocity.z = -Math.abs(newVelocity.z);
       }
 
-      newState.position = newPosition;
-      newState.velocity = newVelocity;
+      organismUpdate.position = newPosition;
+      organismUpdate.velocity = newVelocity;
       if (Math.abs(newVelocity.x) > 0.001 || Math.abs(newVelocity.z) > 0.001) {
-        newState.rotation = Math.atan2(newVelocity.x, newVelocity.z);
+        organismUpdate.rotation = Math.atan2(newVelocity.x, newVelocity.z);
       }
     } else if (species.trophicLevel === 'producer') {
-      newState.state = 'idle';
+      organismUpdate.state = 'idle';
       energy += 0.1;
     }
 
     energy = clamp(energy, 0, species.energyValue * 1.5);
-    newState.energy = energy;
-    newState.age = age;
+    organismUpdate.energy = energy;
+    organismUpdate.age = age;
 
     if (
       energy > species.energyValue * 0.8 &&
       Math.random() < species.reproductionRate * 0.1
     ) {
-      const currentCount = organisms.filter(
-        (o) => o.speciesId === organism.speciesId && !toRemove.includes(o.id),
+      const aliveCount = organisms.filter(
+        (o) => o.speciesId === organism.speciesId && !toRemove.has(o.id),
       ).length;
-      if (currentCount < species.maxPopulation) {
+      if (aliveCount < species.maxPopulation) {
         const offspringPos = organism.position
           .clone()
           .add(
@@ -181,14 +235,21 @@ export function simulateStep(
             ),
           );
         toAdd.push({ speciesId: organism.speciesId, position: offspringPos });
-        newState.energy = energy * 0.5;
+        organismUpdate.energy = energy * 0.5;
       }
     }
 
-    updates.push({ id: organism.id, updates: newState });
+    updates.set(organism.id, organismUpdate);
   }
 
-  return { updates, toRemove, toAdd };
+  const updatesArray: { id: string; updates: Partial<Organism> }[] = [];
+  updates.forEach((u, id) => {
+    if (!toRemove.has(id)) {
+      updatesArray.push({ id, updates: u });
+    }
+  });
+
+  return { updates: updatesArray, toRemove: Array.from(toRemove), toAdd };
 }
 
 export function computeFoodChainRelations(organisms: Organism[]): {

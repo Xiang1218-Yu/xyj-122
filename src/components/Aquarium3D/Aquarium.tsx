@@ -1,6 +1,6 @@
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useState } from 'react';
 import { Canvas, useFrame, ThreeEvent } from '@react-three/fiber';
-import { OrbitControls, Environment, Caustics } from '@react-three/drei';
+import { OrbitControls, Environment } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { Organism3D } from '@/components/Organisms/Organism';
@@ -237,14 +237,35 @@ function Bubbles() {
 }
 
 function ClickableArea({ onAquariumClick }: { onAquariumClick: (point: THREE.Vector3) => void }) {
+  const mouseDownPos = useRef<THREE.Vector2 | null>(null);
+  const selectedSpeciesId = useEcosystemStore((s) => s.selectedSpeciesId);
+
+  const handlePointerDown = (e: ThreeEvent<PointerEvent>) => {
+    if (!selectedSpeciesId) return;
+    mouseDownPos.current = new THREE.Vector2(e.clientX, e.clientY);
+  };
+
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
+    if (!selectedSpeciesId) return;
     e.stopPropagation();
+
+    if (mouseDownPos.current) {
+      const dx = e.clientX - mouseDownPos.current.x;
+      const dy = e.clientY - mouseDownPos.current.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > 5) {
+        mouseDownPos.current = null;
+        return;
+      }
+    }
+    mouseDownPos.current = null;
     onAquariumClick(e.point);
   };
 
   return (
     <mesh
       position={[0, 0, 0]}
+      onPointerDown={handlePointerDown}
       onClick={handleClick}
       visible={false}
     >
@@ -321,7 +342,6 @@ export function Aquarium3D({ onAquariumClick }: Aquarium3DProps) {
         maxDistance={15}
         minPolarAngle={Math.PI / 6}
         maxPolarAngle={Math.PI / 2.2}
-        cursor={selectedSpeciesId ? 'crosshair' : 'grab'}
       />
     </Canvas>
   );

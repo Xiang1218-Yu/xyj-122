@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import * as THREE from 'three';
 import { Aquarium3D } from '@/components/Aquarium3D/Aquarium';
 import { SpeciesToolbar } from '@/components/UI/SpeciesToolbar';
@@ -14,6 +15,19 @@ export function MainPage() {
   const selectedSpeciesId = useEcosystemStore((s) => s.selectedSpeciesId);
   const addOrganism = useEcosystemStore((s) => s.addOrganism);
   const setSelectedSpecies = useEcosystemStore((s) => s.setSelectedSpecies);
+
+  useEffect(() => {
+    const canvas = document.querySelector('canvas');
+    if (canvas) {
+      canvas.style.cursor = selectedSpeciesId ? 'crosshair' : 'grab';
+      canvas.style.cursor = selectedSpeciesId ? 'crosshair' : '-webkit-grab';
+    }
+    return () => {
+      if (canvas) {
+        canvas.style.cursor = 'default';
+      }
+    };
+  }, [selectedSpeciesId]);
 
   const handleAquariumClick = (point: THREE.Vector3) => {
     if (!selectedSpeciesId) return;
