@@ -30,7 +30,7 @@ export function SpeciesInfoCard() {
   };
 
   return (
-    <div className="absolute top-20 right-4 z-20 animate-in fade-in slide-in-from-right-4 duration-300">
+    <div className="absolute top-20 right-4 z-40 animate-in fade-in slide-in-from-right-4 duration-300">
       <GlassCard className="p-5 w-72">
         <div className="flex justify-between items-start mb-4">
           <div className="flex items-center gap-3">

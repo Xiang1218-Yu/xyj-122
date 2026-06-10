@@ -1,6 +1,6 @@
 import { useRef, useMemo, useState } from 'react';
 import { Canvas, useFrame, ThreeEvent } from '@react-three/fiber';
-import { OrbitControls, Environment } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { Organism3D } from '@/components/Organisms/Organism';
@@ -329,8 +329,6 @@ export function Aquarium3D({ onAquariumClick }: Aquarium3DProps) {
       })}
 
       <ClickableArea onAquariumClick={onAquariumClick} />
-
-      <Environment preset="night" />
 
       <EffectComposer>
         <Bloom luminanceThreshold={0.2} luminanceSmoothing={0.9} height={300} intensity={0.5} />

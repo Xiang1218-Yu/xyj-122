@@ -11,7 +11,7 @@ export function ControlButtons() {
   const selectedSpeciesId = useEcosystemStore((s) => s.selectedSpeciesId);
 
   return (
-    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10">
+    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40">
       <GlassCard className="px-4 py-2 flex items-center gap-2">
         <div className="flex items-center gap-2 pr-3 border-r border-white/20">
           <Sparkles size={18} className="text-cyan-400" />

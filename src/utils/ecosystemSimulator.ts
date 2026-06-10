@@ -141,6 +141,37 @@ export function simulateStep(
       }
 
       newPosition.add(newVelocity);
+
+      if (newPosition.x < AQUARIUM_BOUNDS.minX + 0.3) {
+        newPosition.x = AQUARIUM_BOUNDS.minX + 0.3;
+        newVelocity.x = Math.abs(newVelocity.x);
+      }
+      if (newPosition.x > AQUARIUM_BOUNDS.maxX - 0.3) {
+        newPosition.x = AQUARIUM_BOUNDS.maxX - 0.3;
+        newVelocity.x = -Math.abs(newVelocity.x);
+      }
+      if (newPosition.y < AQUARIUM_BOUNDS.minY + 0.2) {
+        newPosition.y = AQUARIUM_BOUNDS.minY + 0.2;
+        newVelocity.y = Math.abs(newVelocity.y);
+      }
+      if (newPosition.y > AQUARIUM_BOUNDS.maxY - 0.2) {
+        newPosition.y = AQUARIUM_BOUNDS.maxY - 0.2;
+        newVelocity.y = -Math.abs(newVelocity.y);
+      }
+      if (newPosition.z < AQUARIUM_BOUNDS.minZ + 0.3) {
+        newPosition.z = AQUARIUM_BOUNDS.minZ + 0.3;
+        newVelocity.z = Math.abs(newVelocity.z);
+      }
+      if (newPosition.z > AQUARIUM_BOUNDS.maxZ - 0.3) {
+        newPosition.z = AQUARIUM_BOUNDS.maxZ - 0.3;
+        newVelocity.z = -Math.abs(newVelocity.z);
+      }
+
+      organismUpdate.position = newPosition;
+      organismUpdate.velocity = newVelocity;
+      if (Math.abs(newVelocity.x) > 0.001 || Math.abs(newVelocity.z) > 0.001) {
+        organismUpdate.rotation = Math.atan2(newVelocity.x, newVelocity.z);
+      }
     } else if (species.trophicLevel !== 'producer' && species.speed > 0) {
       const prey = findNearestPrey(organism, organisms, eatenPrey);
       const predator = findNearestPredator(organism, organisms);
