@@ -8,6 +8,7 @@ import { SpeciesInfoCard } from '@/components/UI/SpeciesInfoCard';
 import { ControlButtons } from '@/components/UI/ControlButtons';
 import { PresetSelector } from '@/components/UI/PresetSelector';
 import { Timeline } from '@/components/UI/Timeline';
+import { EnvironmentSliders } from '@/components/UI/EnvironmentSliders';
 import { useEcosystemSimulation } from '@/hooks/useEcosystemSimulation';
 import { useEcosystemStore, AQUARIUM_BOUNDS } from '@/store/useEcosystemStore';
 import { GlassCard } from '@/components/common/GlassCard';
@@ -249,6 +250,7 @@ export function MainPage() {
       <FoodWebPanel />
       <SpeciesInfoCard />
       <Timeline />
+      <EnvironmentSliders />
 
       {selectedSpeciesId && (
         <div className="absolute inset-0 pointer-events-none z-5">

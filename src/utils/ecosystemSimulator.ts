@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { Organism } from '@/types/ecosystem';
+import type { Organism, Species } from '@/types/ecosystem';
 import { getSpeciesById, SPECIES } from '@/data/species';
 import { AQUARIUM_BOUNDS } from '@/store/useEcosystemStore';
 
@@ -9,6 +9,55 @@ function clamp(value: number, min: number, max: number): number {
 
 function distance(a: THREE.Vector3, b: THREE.Vector3): number {
   return a.distanceTo(b);
+}
+
+function calculateEnvironmentFitness(
+  species: Species,
+  waterTemperature: number,
+  lightIntensity: number,
+): { temperatureFactor: number; lightFactor: number; overallFitness: number } {
+  const prefs = species.environmentalPrefs;
+
+  const tempDeviation = Math.abs(waterTemperature - prefs.optimalTemperature);
+  const tempRange = prefs.maxTemperature - prefs.minTemperature;
+  const tempTolerance = tempRange * 0.5;
+  let temperatureFactor = 1 - Math.min(1, tempDeviation / tempTolerance);
+  temperatureFactor = Math.max(0.3, temperatureFactor);
+
+  const lightDeviation = Math.abs(lightIntensity - prefs.optimalLight);
+  const lightRange = prefs.maxLight - prefs.minLight;
+  const lightTolerance = lightRange * 0.5;
+  let lightFactor = 1 - Math.min(1, lightDeviation / lightTolerance);
+  lightFactor = Math.max(0.3, lightFactor);
+
+  if (waterTemperature < prefs.minTemperature || waterTemperature > prefs.maxTemperature) {
+    temperatureFactor = Math.max(0.1, temperatureFactor * 0.5);
+  }
+  if (lightIntensity < prefs.minLight || lightIntensity > prefs.maxLight) {
+    lightFactor = Math.max(0.1, lightFactor * 0.5);
+  }
+
+  const overallFitness = (temperatureFactor + lightFactor) / 2;
+
+  return { temperatureFactor, lightFactor, overallFitness };
+}
+
+function getTemperatureStatusLabel(temp: number, species: Species): string {
+  const prefs = species.environmentalPrefs;
+  if (temp < prefs.minTemperature - 3) return '过冷';
+  if (temp < prefs.optimalTemperature - 2) return '偏冷';
+  if (temp <= prefs.optimalTemperature + 2) return '适宜';
+  if (temp <= prefs.maxTemperature + 3) return '偏热';
+  return '过热';
+}
+
+function getLightStatusLabel(light: number, species: Species): string {
+  const prefs = species.environmentalPrefs;
+  if (light < prefs.minLight - 0.1) return '过暗';
+  if (light < prefs.optimalLight - 0.15) return '偏暗';
+  if (light <= prefs.optimalLight + 0.15) return '适宜';
+  if (light <= prefs.maxLight + 0.1) return '偏亮';
+  return '过亮';
 }
 
 function findNearestPrey(
@@ -85,29 +134,49 @@ function findNearestDead(
 
 export function simulateStep(
   organisms: Organism[],
+  waterTemperature: number,
+  lightIntensity: number,
 ): {
   updates: { id: string; updates: Partial<Organism> }[];
   toRemove: string[];
   toAdd: { speciesId: string; position: THREE.Vector3 }[];
+  environmentalEffects: { speciesId: string; fitness: number; tempStatus: string; lightStatus: string }[];
 } {
   const updates: Map<string, Partial<Organism>> = new Map();
   const toRemove: Set<string> = new Set();
   const toAdd: { speciesId: string; position: THREE.Vector3 }[] = [];
   const eatenPrey: Set<string> = new Set();
+  const environmentalEffects: { speciesId: string; fitness: number; tempStatus: string; lightStatus: string }[] = [];
+
+  const seenSpecies = new Set<string>();
 
   for (const organism of organisms) {
     const species = getSpeciesById(organism.speciesId);
     if (!species) continue;
 
+    const envFitness = calculateEnvironmentFitness(species, waterTemperature, lightIntensity);
+
+    if (!seenSpecies.has(species.id)) {
+      seenSpecies.add(species.id);
+      environmentalEffects.push({
+        speciesId: species.id,
+        fitness: envFitness.overallFitness,
+        tempStatus: getTemperatureStatusLabel(waterTemperature, species),
+        lightStatus: getLightStatusLabel(lightIntensity, species),
+      });
+    }
+
     let energy = organism.energy;
     const age = organism.age + 1;
 
-    if (age >= species.lifespan || energy <= 0) {
+    if (age >= species.lifespan * envFitness.overallFitness || energy <= 0) {
       toRemove.add(organism.id);
       continue;
     }
 
-    energy -= 0.05 + species.size * 0.02;
+    const baseEnergyCost = 0.05 + species.size * 0.02;
+    const energyCostMultiplier = 1 + (1 - envFitness.overallFitness) * 1.5;
+    energy -= baseEnergyCost * energyCostMultiplier;
 
     const organismUpdate: Partial<Organism> = {};
     const newPosition = organism.position.clone();
@@ -240,16 +309,20 @@ export function simulateStep(
       }
     } else if (species.trophicLevel === 'producer') {
       organismUpdate.state = 'idle';
-      energy += 0.1;
+      const baseProduction = 0.1;
+      const lightBonus = envFitness.lightFactor;
+      const tempBonus = envFitness.temperatureFactor;
+      energy += baseProduction * lightBonus * tempBonus * 1.5;
     }
 
     energy = clamp(energy, 0, species.energyValue * 1.5);
     organismUpdate.energy = energy;
     organismUpdate.age = age;
 
+    const effectiveReproductionRate = species.reproductionRate * envFitness.overallFitness;
     if (
       energy > species.energyValue * 0.8 &&
-      Math.random() < species.reproductionRate * 0.1
+      Math.random() < effectiveReproductionRate * 0.1
     ) {
       const aliveCount = organisms.filter(
         (o) => o.speciesId === organism.speciesId && !toRemove.has(o.id),
@@ -279,7 +352,7 @@ export function simulateStep(
     }
   });
 
-  return { updates: updatesArray, toRemove: Array.from(toRemove), toAdd };
+  return { updates: updatesArray, toRemove: Array.from(toRemove), toAdd, environmentalEffects };
 }
 
 export function computeFoodChainRelations(organisms: Organism[]): {

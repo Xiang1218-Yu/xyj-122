@@ -216,6 +216,8 @@ export function useEcosystemSimulation() {
   const clearEvent = useEcosystemStore((s) => s.clearEvent);
   const setWaterColor = useEcosystemStore((s) => s.setWaterColor);
   const recordSnapshot = useEcosystemStore((s) => s.recordSnapshot);
+  const waterTemperature = useEcosystemStore((s) => s.waterTemperature);
+  const lightIntensity = useEcosystemStore((s) => s.lightIntensity);
 
   const SNAPSHOT_INTERVAL = 5;
 
@@ -254,7 +256,7 @@ export function useEcosystemSimulation() {
         }
 
         const organisms = state.organisms;
-        const { updates, toRemove, toAdd } = simulateStep(organisms);
+        const { updates, toRemove, toAdd } = simulateStep(organisms, waterTemperature, lightIntensity);
 
         if (activeEvent) {
           const eventEffects = applyEventEffects(activeEvent, currentTime, state);
@@ -311,5 +313,5 @@ export function useEcosystemSimulation() {
         cancelAnimationFrame(frameRef.current);
       }
     };
-  }, [batchUpdateOrganisms, batchRemoveOrganisms, addOrganism, incrementTime, triggerEvent, clearEvent, setWaterColor, recordSnapshot]);
+  }, [batchUpdateOrganisms, batchRemoveOrganisms, addOrganism, incrementTime, triggerEvent, clearEvent, setWaterColor, recordSnapshot, waterTemperature, lightIntensity]);
 }

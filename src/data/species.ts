@@ -17,6 +17,14 @@ export const SPECIES: Species[] = [
     size: 0.8,
     energyValue: 30,
     maxPopulation: 15,
+    environmentalPrefs: {
+      optimalTemperature: 22,
+      minTemperature: 10,
+      maxTemperature: 32,
+      optimalLight: 0.7,
+      minLight: 0.2,
+      maxLight: 1.0,
+    },
   },
   {
     id: 'grass',
@@ -34,6 +42,14 @@ export const SPECIES: Species[] = [
     size: 0.5,
     energyValue: 20,
     maxPopulation: 20,
+    environmentalPrefs: {
+      optimalTemperature: 24,
+      minTemperature: 12,
+      maxTemperature: 34,
+      optimalLight: 0.65,
+      minLight: 0.15,
+      maxLight: 0.95,
+    },
   },
   {
     id: 'fish',
@@ -51,6 +67,14 @@ export const SPECIES: Species[] = [
     size: 0.5,
     energyValue: 50,
     maxPopulation: 12,
+    environmentalPrefs: {
+      optimalTemperature: 24,
+      minTemperature: 14,
+      maxTemperature: 32,
+      optimalLight: 0.55,
+      minLight: 0.1,
+      maxLight: 0.9,
+    },
   },
   {
     id: 'snail',
@@ -68,6 +92,14 @@ export const SPECIES: Species[] = [
     size: 0.35,
     energyValue: 35,
     maxPopulation: 10,
+    environmentalPrefs: {
+      optimalTemperature: 20,
+      minTemperature: 8,
+      maxTemperature: 30,
+      optimalLight: 0.35,
+      minLight: 0.05,
+      maxLight: 0.7,
+    },
   },
   {
     id: 'turtle',
@@ -85,6 +117,14 @@ export const SPECIES: Species[] = [
     size: 0.7,
     energyValue: 80,
     maxPopulation: 4,
+    environmentalPrefs: {
+      optimalTemperature: 26,
+      minTemperature: 15,
+      maxTemperature: 35,
+      optimalLight: 0.85,
+      minLight: 0.3,
+      maxLight: 1.0,
+    },
   },
   {
     id: 'bigfish',
@@ -102,6 +142,14 @@ export const SPECIES: Species[] = [
     size: 0.9,
     energyValue: 100,
     maxPopulation: 3,
+    environmentalPrefs: {
+      optimalTemperature: 22,
+      minTemperature: 12,
+      maxTemperature: 30,
+      optimalLight: 0.6,
+      minLight: 0.15,
+      maxLight: 0.85,
+    },
   },
   {
     id: 'frog',
@@ -119,6 +167,14 @@ export const SPECIES: Species[] = [
     size: 0.5,
     energyValue: 60,
     maxPopulation: 5,
+    environmentalPrefs: {
+      optimalTemperature: 25,
+      minTemperature: 15,
+      maxTemperature: 34,
+      optimalLight: 0.8,
+      minLight: 0.25,
+      maxLight: 1.0,
+    },
   },
   {
     id: 'bacteria',
@@ -136,6 +192,14 @@ export const SPECIES: Species[] = [
     size: 0.2,
     energyValue: 5,
     maxPopulation: 8,
+    environmentalPrefs: {
+      optimalTemperature: 25,
+      minTemperature: 5,
+      maxTemperature: 40,
+      optimalLight: 0.5,
+      minLight: 0,
+      maxLight: 1.0,
+    },
   },
   {
     id: 'lotus',
@@ -153,6 +217,14 @@ export const SPECIES: Species[] = [
     size: 0.9,
     energyValue: 35,
     maxPopulation: 8,
+    environmentalPrefs: {
+      optimalTemperature: 28,
+      minTemperature: 18,
+      maxTemperature: 38,
+      optimalLight: 0.9,
+      minLight: 0.4,
+      maxLight: 1.0,
+    },
   },
   {
     id: 'duckweed',
@@ -170,6 +242,14 @@ export const SPECIES: Species[] = [
     size: 0.3,
     energyValue: 15,
     maxPopulation: 25,
+    environmentalPrefs: {
+      optimalTemperature: 26,
+      minTemperature: 15,
+      maxTemperature: 36,
+      optimalLight: 0.85,
+      minLight: 0.35,
+      maxLight: 1.0,
+    },
   },
   {
     id: 'tadpole',
@@ -187,6 +267,14 @@ export const SPECIES: Species[] = [
     size: 0.25,
     energyValue: 25,
     maxPopulation: 15,
+    environmentalPrefs: {
+      optimalTemperature: 24,
+      minTemperature: 14,
+      maxTemperature: 32,
+      optimalLight: 0.6,
+      minLight: 0.15,
+      maxLight: 0.9,
+    },
   },
   {
     id: 'dragonfly',
@@ -204,6 +292,14 @@ export const SPECIES: Species[] = [
     size: 0.4,
     energyValue: 45,
     maxPopulation: 6,
+    environmentalPrefs: {
+      optimalTemperature: 22,
+      minTemperature: 12,
+      maxTemperature: 30,
+      optimalLight: 0.55,
+      minLight: 0.1,
+      maxLight: 0.85,
+    },
   },
   {
     id: 'fern',
@@ -221,6 +317,14 @@ export const SPECIES: Species[] = [
     size: 0.7,
     energyValue: 28,
     maxPopulation: 12,
+    environmentalPrefs: {
+      optimalTemperature: 20,
+      minTemperature: 10,
+      maxTemperature: 28,
+      optimalLight: 0.35,
+      minLight: 0.05,
+      maxLight: 0.65,
+    },
   },
   {
     id: 'orchid',
@@ -238,6 +342,14 @@ export const SPECIES: Species[] = [
     size: 0.5,
     energyValue: 22,
     maxPopulation: 8,
+    environmentalPrefs: {
+      optimalTemperature: 23,
+      minTemperature: 14,
+      maxTemperature: 32,
+      optimalLight: 0.6,
+      minLight: 0.2,
+      maxLight: 0.85,
+    },
   },
   {
     id: 'moss',
@@ -255,6 +367,14 @@ export const SPECIES: Species[] = [
     size: 0.25,
     energyValue: 12,
     maxPopulation: 20,
+    environmentalPrefs: {
+      optimalTemperature: 18,
+      minTemperature: 5,
+      maxTemperature: 26,
+      optimalLight: 0.3,
+      minLight: 0.02,
+      maxLight: 0.6,
+    },
   },
   {
     id: 'beetle',
@@ -272,6 +392,14 @@ export const SPECIES: Species[] = [
     size: 0.25,
     energyValue: 30,
     maxPopulation: 18,
+    environmentalPrefs: {
+      optimalTemperature: 24,
+      minTemperature: 14,
+      maxTemperature: 34,
+      optimalLight: 0.55,
+      minLight: 0.15,
+      maxLight: 0.85,
+    },
   },
   {
     id: 'ant',
@@ -289,6 +417,14 @@ export const SPECIES: Species[] = [
     size: 0.15,
     energyValue: 10,
     maxPopulation: 30,
+    environmentalPrefs: {
+      optimalTemperature: 25,
+      minTemperature: 10,
+      maxTemperature: 38,
+      optimalLight: 0.5,
+      minLight: 0.05,
+      maxLight: 0.9,
+    },
   },
   {
     id: 'lizard',
@@ -306,6 +442,14 @@ export const SPECIES: Species[] = [
     size: 0.45,
     energyValue: 55,
     maxPopulation: 5,
+    environmentalPrefs: {
+      optimalTemperature: 28,
+      minTemperature: 18,
+      maxTemperature: 38,
+      optimalLight: 0.85,
+      minLight: 0.3,
+      maxLight: 1.0,
+    },
   },
   {
     id: 'earthworm',
@@ -323,6 +467,14 @@ export const SPECIES: Species[] = [
     size: 0.2,
     energyValue: 15,
     maxPopulation: 12,
+    environmentalPrefs: {
+      optimalTemperature: 18,
+      minTemperature: 5,
+      maxTemperature: 28,
+      optimalLight: 0.2,
+      minLight: 0,
+      maxLight: 0.5,
+    },
   },
   {
     id: 'polluted_algae',
@@ -340,6 +492,14 @@ export const SPECIES: Species[] = [
     size: 0.15,
     energyValue: 8,
     maxPopulation: 40,
+    environmentalPrefs: {
+      optimalTemperature: 28,
+      minTemperature: 10,
+      maxTemperature: 40,
+      optimalLight: 0.8,
+      minLight: 0.2,
+      maxLight: 1.0,
+    },
   },
   {
     id: 'tubifex',
@@ -357,6 +517,14 @@ export const SPECIES: Species[] = [
     size: 0.2,
     energyValue: 18,
     maxPopulation: 20,
+    environmentalPrefs: {
+      optimalTemperature: 24,
+      minTemperature: 8,
+      maxTemperature: 36,
+      optimalLight: 0.25,
+      minLight: 0,
+      maxLight: 0.6,
+    },
   },
   {
     id: 'mosquito_larva',
@@ -374,6 +542,14 @@ export const SPECIES: Species[] = [
     size: 0.15,
     energyValue: 12,
     maxPopulation: 25,
+    environmentalPrefs: {
+      optimalTemperature: 26,
+      minTemperature: 12,
+      maxTemperature: 38,
+      optimalLight: 0.5,
+      minLight: 0.1,
+      maxLight: 0.85,
+    },
   },
   {
     id: 'carp',
@@ -391,6 +567,14 @@ export const SPECIES: Species[] = [
     size: 0.55,
     energyValue: 55,
     maxPopulation: 10,
+    environmentalPrefs: {
+      optimalTemperature: 23,
+      minTemperature: 5,
+      maxTemperature: 36,
+      optimalLight: 0.5,
+      minLight: 0.05,
+      maxLight: 0.9,
+    },
   },
   {
     id: 'coral',
@@ -408,6 +592,14 @@ export const SPECIES: Species[] = [
     size: 0.8,
     energyValue: 40,
     maxPopulation: 10,
+    environmentalPrefs: {
+      optimalTemperature: 26,
+      minTemperature: 18,
+      maxTemperature: 32,
+      optimalLight: 0.9,
+      minLight: 0.5,
+      maxLight: 1.0,
+    },
   },
   {
     id: 'jellyfish',
@@ -425,6 +617,14 @@ export const SPECIES: Species[] = [
     size: 0.6,
     energyValue: 30,
     maxPopulation: 6,
+    environmentalPrefs: {
+      optimalTemperature: 20,
+      minTemperature: 10,
+      maxTemperature: 28,
+      optimalLight: 0.4,
+      minLight: 0.05,
+      maxLight: 0.75,
+    },
   },
   {
     id: 'shrimp',
@@ -442,6 +642,14 @@ export const SPECIES: Species[] = [
     size: 0.25,
     energyValue: 25,
     maxPopulation: 15,
+    environmentalPrefs: {
+      optimalTemperature: 22,
+      minTemperature: 12,
+      maxTemperature: 30,
+      optimalLight: 0.45,
+      minLight: 0.1,
+      maxLight: 0.8,
+    },
   },
 ];
 

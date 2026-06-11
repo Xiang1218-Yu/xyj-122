@@ -65,6 +65,8 @@ interface EcosystemStore {
   backgroundColors: [string, string, string];
   waterColor: string;
   ambientLightIntensity: number;
+  waterTemperature: number;
+  lightIntensity: number;
   activeEvent: EcologicalEvent | null;
   showTimeline: boolean;
 
@@ -91,6 +93,8 @@ interface EcosystemStore {
   triggerEvent: (event: EcologicalEvent) => void;
   clearEvent: () => void;
   setWaterColor: (color: string) => void;
+  setWaterTemperature: (temp: number) => void;
+  setLightIntensity: (intensity: number) => void;
   toggleTimeline: () => void;
 
   recordSnapshot: () => void;
@@ -160,6 +164,8 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
   backgroundColors: ['#0A1628', '#0d1f3d', '#1E3A5F'] as [string, string, string],
   waterColor: '#22D3EE',
   ambientLightIntensity: 0.7,
+  waterTemperature: 24,
+  lightIntensity: 0.7,
   activeEvent: null,
   showTimeline: true,
 
@@ -267,6 +273,8 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
       backgroundColors: ['#0A1628', '#0d1f3d', '#1E3A5F'] as [string, string, string],
       waterColor: '#22D3EE',
       ambientLightIntensity: 0.7,
+      waterTemperature: 24,
+      lightIntensity: 0.7,
       activeEvent: null,
       showTimeline: true,
       history: [],
@@ -308,6 +316,8 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
       backgroundColors: preset.backgroundColors,
       waterColor: preset.waterColor,
       ambientLightIntensity: preset.ambientLightIntensity,
+      waterTemperature: 24,
+      lightIntensity: preset.ambientLightIntensity,
       activeEvent: null,
       showTimeline: true,
       history: [],
@@ -338,6 +348,14 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
 
   setWaterColor: (color) => {
     set({ waterColor: color });
+  },
+
+  setWaterTemperature: (temp) => {
+    set({ waterTemperature: temp });
+  },
+
+  setLightIntensity: (intensity) => {
+    set({ lightIntensity: intensity, ambientLightIntensity: intensity });
   },
 
   toggleTimeline: () => {

@@ -33,6 +33,15 @@ export interface HistorySnapshot {
 
 export type OrganismState = 'idle' | 'wandering' | 'hunting' | 'fleeing' | 'eating' | 'reproducing';
 
+export interface EnvironmentalPreferences {
+  optimalTemperature: number;
+  minTemperature: number;
+  maxTemperature: number;
+  optimalLight: number;
+  minLight: number;
+  maxLight: number;
+}
+
 export interface Species {
   id: string;
   name: string;
@@ -49,6 +58,7 @@ export interface Species {
   size: number;
   energyValue: number;
   maxPopulation: number;
+  environmentalPrefs: EnvironmentalPreferences;
 }
 
 export interface Organism {
