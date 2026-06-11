@@ -35,6 +35,9 @@ interface CollapsibleDraggablePanelProps {
 }
 
 const STORAGE_KEY_PREFIX = 'panel_state_';
+const COLLAPSED_WIDTH = 120;
+const COLLAPSED_HEIGHT = 44;
+const VIEWPORT_MARGIN = 4;
 
 function loadPanelState(id: string): { position?: PanelPosition; expanded?: boolean } {
   try {
@@ -69,6 +72,15 @@ function computeInitialPosition(defaultPos: DefaultPosition | undefined, panelWi
   }
 
   return { x, y };
+}
+
+function clampPosition(pos: PanelPosition, panelW: number, panelH: number): PanelPosition {
+  const maxX = Math.max(VIEWPORT_MARGIN, window.innerWidth - panelW - VIEWPORT_MARGIN);
+  const maxY = Math.max(VIEWPORT_MARGIN, window.innerHeight - panelH - VIEWPORT_MARGIN);
+  return {
+    x: Math.max(VIEWPORT_MARGIN, Math.min(maxX, pos.x)),
+    y: Math.max(VIEWPORT_MARGIN, Math.min(maxY, pos.y)),
+  };
 }
 
 export function CollapsibleDraggablePanel({
@@ -108,6 +120,18 @@ export function CollapsibleDraggablePanel({
   const dragStartRef = useRef<{ x: number; y: number; startX: number; startY: number } | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const hasMovedRef = useRef(false);
+  const prevExpandedRef = useRef(isExpanded);
+
+  const getPanelDimensions = useCallback((): { w: number; h: number } => {
+    if (!isExpanded) {
+      return { w: COLLAPSED_WIDTH, h: COLLAPSED_HEIGHT };
+    }
+    if (panelRef.current) {
+      const rect = panelRef.current.getBoundingClientRect();
+      return { w: rect.width || width, h: rect.height || 200 };
+    }
+    return { w: width, h: 200 };
+  }, [isExpanded, width]);
 
   useEffect(() => {
     if (persistPosition || persistExpanded) {
@@ -123,6 +147,34 @@ export function CollapsibleDraggablePanel({
       onExpandChange?.(isExpanded);
     }
   }, [isExpanded, onExpandChange, isControlled]);
+
+  useEffect(() => {
+    const wasCollapsed = !prevExpandedRef.current;
+    const nowExpanded = isExpanded;
+    prevExpandedRef.current = isExpanded;
+
+    if (wasCollapsed && nowExpanded) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (panelRef.current) {
+            const rect = panelRef.current.getBoundingClientRect();
+            setPosition((prev) => clampPosition(prev, rect.width || width, rect.height || 200));
+          } else {
+            setPosition((prev) => clampPosition(prev, width, 300));
+          }
+        });
+      });
+    }
+  }, [isExpanded, width]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const dims = getPanelDimensions();
+      setPosition((prev) => clampPosition(prev, dims.w, dims.h));
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [getPanelDimensions]);
 
   const setIsExpanded = useCallback((value: boolean | ((prev: boolean) => boolean)) => {
     if (isControlled) {
@@ -159,19 +211,10 @@ export function CollapsibleDraggablePanel({
 
     const newX = dragStartRef.current.x + dx;
     const newY = dragStartRef.current.y + dy;
+    const dims = getPanelDimensions();
 
-    const panelW = isExpanded ? width : 120;
-    const panelH = isExpanded ? 200 : 44;
-    const maxX = window.innerWidth - panelW - 4;
-    const maxY = window.innerHeight - panelH - 4;
-    const minX = 4;
-    const minY = 4;
-
-    setPosition({
-      x: Math.max(minX, Math.min(maxX, newX)),
-      y: Math.max(minY, Math.min(maxY, newY)),
-    });
-  }, [isDragging, isExpanded, width]);
+    setPosition(clampPosition({ x: newX, y: newY }, dims.w, dims.h));
+  }, [isDragging, getPanelDimensions]);
 
   const handlePointerUp = useCallback((e: React.PointerEvent) => {
     if (!isDragging) return;
