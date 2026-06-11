@@ -17,7 +17,7 @@ interface EcosystemStore {
   ambientLightIntensity: number;
   activeEvent: EcologicalEvent | null;
 
-  addOrganism: (speciesId: string, position?: THREE.Vector3) => void;
+  addOrganism: (speciesId: string, position?: THREE.Vector3, ignoreMaxPopulation?: boolean) => void;
   removeOrganism: (organismId: string) => void;
   updateOrganism: (organismId: string, updates: Partial<Organism>) => void;
   setSelectedSpecies: (speciesId: string | null) => void;
@@ -98,13 +98,15 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
   ambientLightIntensity: 0.7,
   activeEvent: null,
 
-  addOrganism: (speciesId, position) => {
+  addOrganism: (speciesId, position, ignoreMaxPopulation = false) => {
     const state = get();
     const species = getSpeciesById(speciesId);
     if (!species) return;
 
-    const currentCount = state.organisms.filter((o) => o.speciesId === speciesId).length;
-    if (currentCount >= species.maxPopulation) return;
+    if (!ignoreMaxPopulation) {
+      const currentCount = state.organisms.filter((o) => o.speciesId === speciesId).length;
+      if (currentCount >= species.maxPopulation) return;
+    }
 
     const organism = createOrganism(speciesId, position);
     if (organism) {

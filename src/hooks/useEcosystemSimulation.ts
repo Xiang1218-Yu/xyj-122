@@ -3,7 +3,8 @@ import * as THREE from 'three';
 import { useEcosystemStore } from '@/store/useEcosystemStore';
 import { simulateStep } from '@/utils/ecosystemSimulator';
 import { AQUARIUM_BOUNDS } from '@/store/useEcosystemStore';
-import type { EcologicalEvent, EcologicalEventType } from '@/types/ecosystem';
+import { getSpeciesById } from '@/data/species';
+import type { EcologicalEvent, EcologicalEventType, PresetEcosystem } from '@/types/ecosystem';
 
 const EVENT_CONFIGS: Record<EcologicalEventType, {
   name: string;
@@ -39,7 +40,40 @@ const EVENT_CONFIGS: Record<EcologicalEventType, {
   },
 };
 
-const INVASIVE_SPECIES_IDS = ['jellyfish', 'polluted_algae', 'carp'];
+const INVASIVE_SPECIES_BY_HABITAT: Record<'water' | 'land' | 'both', string[]> = {
+  water: ['jellyfish', 'polluted_algae', 'carp', 'mosquito_larva'],
+  land: ['ant', 'beetle'],
+  both: ['frog', 'snail'],
+};
+
+function inferHabitatFromPreset(preset: PresetEcosystem | undefined): 'water' | 'land' | 'both' {
+  if (!preset) return 'water';
+
+  switch (preset.category) {
+    case 'rainforest':
+      return 'land';
+    case 'freshwater':
+    case 'marine':
+    case 'polluted':
+      return 'water';
+    case 'custom':
+    default: {
+      const speciesHabitats = preset.species.map(({ speciesId }) => getSpeciesById(speciesId)?.habitat);
+      const waterCount = speciesHabitats.filter((h) => h === 'water' || h === 'both').length;
+      const landCount = speciesHabitats.filter((h) => h === 'land' || h === 'both').length;
+      if (waterCount > landCount) return 'water';
+      if (landCount > waterCount) return 'land';
+      return 'both';
+    }
+  }
+}
+
+function getInvasiveSpeciesForHabitat(habitat: 'water' | 'land' | 'both'): string[] {
+  if (habitat === 'both') {
+    return [...INVASIVE_SPECIES_BY_HABITAT.water, ...INVASIVE_SPECIES_BY_HABITAT.land, ...INVASIVE_SPECIES_BY_HABITAT.both];
+  }
+  return [...INVASIVE_SPECIES_BY_HABITAT[habitat], ...INVASIVE_SPECIES_BY_HABITAT.both];
+}
 
 function generateEventId(): string {
   return Math.random().toString(36).substring(2, 11);
@@ -74,12 +108,12 @@ function applyEventEffects(
 ): {
   updates: { id: string; updates: Partial<any> }[];
   toRemove: string[];
-  toAdd: { speciesId: string; position: THREE.Vector3 }[];
+  toAdd: { speciesId: string; position: THREE.Vector3; ignoreMaxPopulation?: boolean }[];
   waterColor?: string;
 } {
   const updates: { id: string; updates: Partial<any> }[] = [];
   const toRemove: string[] = [];
-  const toAdd: { speciesId: string; position: THREE.Vector3 }[] = [];
+  const toAdd: { speciesId: string; position: THREE.Vector3; ignoreMaxPopulation?: boolean }[] = [];
   let waterColor: string | undefined;
 
   const progress = (currentTime - event.startTime) / event.duration;
@@ -108,24 +142,33 @@ function applyEventEffects(
           AQUARIUM_BOUNDS.minY + 0.2 + Math.random() * 0.5,
           AQUARIUM_BOUNDS.minZ + Math.random() * (AQUARIUM_BOUNDS.maxZ - AQUARIUM_BOUNDS.minZ)
         );
-        toAdd.push({ speciesId: 'polluted_algae', position: pos });
+        toAdd.push({ speciesId: 'polluted_algae', position: pos, ignoreMaxPopulation: true });
       }
       break;
     }
 
     case 'invasive_species': {
-      if (Math.random() < 0.08 * intensityFactor) {
-        const invasiveId = INVASIVE_SPECIES_IDS[Math.floor(Math.random() * INVASIVE_SPECIES_IDS.length)];
+      const preset = state.getCurrentPreset();
+      const habitat = inferHabitatFromPreset(preset);
+      const invasiveSpeciesIds = getInvasiveSpeciesForHabitat(habitat);
+
+      if (Math.random() < 0.08 * intensityFactor && invasiveSpeciesIds.length > 0) {
+        const invasiveId = invasiveSpeciesIds[Math.floor(Math.random() * invasiveSpeciesIds.length)];
+        const species = getSpeciesById(invasiveId);
+        const isProducer = species?.trophicLevel === 'producer';
+        const minY = isProducer ? AQUARIUM_BOUNDS.minY : AQUARIUM_BOUNDS.minY + 0.3;
+        const maxY = isProducer ? AQUARIUM_BOUNDS.minY + 0.5 : AQUARIUM_BOUNDS.maxY - 0.3;
+
         const pos = new THREE.Vector3(
           AQUARIUM_BOUNDS.minX + Math.random() * (AQUARIUM_BOUNDS.maxX - AQUARIUM_BOUNDS.minX),
-          AQUARIUM_BOUNDS.minY + 0.3 + Math.random() * (AQUARIUM_BOUNDS.maxY - AQUARIUM_BOUNDS.minY - 0.6),
+          minY + Math.random() * (maxY - minY),
           AQUARIUM_BOUNDS.minZ + Math.random() * (AQUARIUM_BOUNDS.maxZ - AQUARIUM_BOUNDS.minZ)
         );
-        toAdd.push({ speciesId: invasiveId, position: pos });
+        toAdd.push({ speciesId: invasiveId, position: pos, ignoreMaxPopulation: true });
       }
 
       state.organisms.forEach((org) => {
-        if (INVASIVE_SPECIES_IDS.includes(org.speciesId)) {
+        if (invasiveSpeciesIds.includes(org.speciesId)) {
           updates.push({ id: org.id, updates: { energy: Math.min(org.energy + 0.2 * intensityFactor, 150) } });
         } else if (Math.random() < 0.01 * intensityFactor) {
           updates.push({ id: org.id, updates: { energy: Math.max(0, org.energy - 0.1 * intensityFactor) } });
@@ -236,8 +279,8 @@ export function useEcosystemSimulation() {
         if (toRemove.length > 0) {
           batchRemoveOrganisms(toRemove);
         }
-        toAdd.forEach(({ speciesId, position }) => {
-          addOrganism(speciesId, position);
+        toAdd.forEach(({ speciesId, position, ignoreMaxPopulation }) => {
+          addOrganism(speciesId, position, ignoreMaxPopulation);
         });
 
         incrementTime();
