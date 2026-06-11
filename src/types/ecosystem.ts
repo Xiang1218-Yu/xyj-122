@@ -1,6 +1,6 @@
 import type { Vector3 } from 'three';
 
-export type TrophicLevel = 'producer' | 'herbivore' | 'carnivore' | 'decomposer';
+export type TrophicLevel = 'producer' | 'herbivore' | 'carnivore' | 'decomposer' | 'omnivore';
 
 export type OrganismState = 'idle' | 'wandering' | 'hunting' | 'fleeing' | 'eating' | 'reproducing';
 
@@ -46,4 +46,24 @@ export interface EcosystemStats {
 export interface FoodChainRelation {
   predatorId: string;
   preyId: string;
+}
+
+export interface PresetSpeciesConfig {
+  speciesId: string;
+  count: number;
+}
+
+export interface PresetEcosystem {
+  id: string;
+  name: string;
+  emoji: string;
+  description: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  category: 'freshwater' | 'rainforest' | 'polluted' | 'marine' | 'custom';
+  backgroundGradient: string;
+  waterColor: string;
+  ambientLightIntensity: number;
+  species: PresetSpeciesConfig[];
+  educationalInfo: string;
+  expectedObservations: string[];
 }

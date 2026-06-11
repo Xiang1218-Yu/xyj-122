@@ -18,6 +18,7 @@ export function FoodWebPanel() {
     const byLevel: Record<string, string[]> = {
       producer: [],
       herbivore: [],
+      omnivore: [],
       carnivore: [],
       decomposer: [],
     };
@@ -27,7 +28,7 @@ export function FoodWebPanel() {
       if (sp) byLevel[sp.trophicLevel].push(id);
     });
 
-    const levels = ['producer', 'decomposer', 'herbivore', 'carnivore'];
+    const levels = ['producer', 'decomposer', 'herbivore', 'omnivore', 'carnivore'];
     const width = 200;
     const height = 160;
 

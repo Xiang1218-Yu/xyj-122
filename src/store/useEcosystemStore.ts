@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import * as THREE from 'three';
-import type { Organism, EcosystemStats, Species } from '@/types/ecosystem';
+import type { Organism, EcosystemStats, Species, PresetEcosystem } from '@/types/ecosystem';
 import { getSpeciesById, SPECIES } from '@/data/species';
+import { getPresetById } from '@/data/presets';
 
 interface EcosystemStore {
   organisms: Organism[];
@@ -10,6 +11,10 @@ interface EcosystemStore {
   isRunning: boolean;
   simulationTime: number;
   showLabels: boolean;
+  currentPresetId: string | null;
+  backgroundGradient: string;
+  waterColor: string;
+  ambientLightIntensity: number;
 
   addOrganism: (speciesId: string, position?: THREE.Vector3) => void;
   removeOrganism: (organismId: string) => void;
@@ -23,6 +28,8 @@ interface EcosystemStore {
   getStats: () => EcosystemStats;
   batchUpdateOrganisms: (updates: { id: string; updates: Partial<Organism> }[]) => void;
   batchRemoveOrganisms: (ids: string[]) => void;
+  loadPreset: (presetId: string) => void;
+  getCurrentPreset: () => PresetEcosystem | undefined;
 }
 
 const AQUARIUM_BOUNDS = {
@@ -81,6 +88,10 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
   isRunning: true,
   simulationTime: 0,
   showLabels: true,
+  currentPresetId: null,
+  backgroundGradient: 'from-[#0A1628] via-[#0d1f3d] to-[#1E3A5F]',
+  waterColor: '#22D3EE',
+  ambientLightIntensity: 0.7,
 
   addOrganism: (speciesId, position) => {
     const state = get();
@@ -153,11 +164,51 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
       selectedOrganismId: null,
       simulationTime: 0,
       isRunning: true,
+      currentPresetId: null,
+      backgroundGradient: 'from-[#0A1628] via-[#0d1f3d] to-[#1E3A5F]',
+      waterColor: '#22D3EE',
+      ambientLightIntensity: 0.7,
     });
   },
 
   toggleLabels: () => {
     set((prev) => ({ showLabels: !prev.showLabels }));
+  },
+
+  loadPreset: (presetId) => {
+    const preset = getPresetById(presetId);
+    if (!preset) return;
+
+    const newOrganisms: Organism[] = [];
+    preset.species.forEach(({ speciesId, count }) => {
+      const species = getSpeciesById(speciesId);
+      if (!species) return;
+
+      const actualCount = Math.min(count, species.maxPopulation);
+      for (let i = 0; i < actualCount; i++) {
+        const organism = createOrganism(speciesId);
+        if (organism) {
+          newOrganisms.push(organism);
+        }
+      }
+    });
+
+    set({
+      organisms: newOrganisms,
+      selectedSpeciesId: null,
+      selectedOrganismId: null,
+      simulationTime: 0,
+      isRunning: true,
+      currentPresetId: presetId,
+      backgroundGradient: preset.backgroundGradient,
+      waterColor: preset.waterColor,
+      ambientLightIntensity: preset.ambientLightIntensity,
+    });
+  },
+
+  getCurrentPreset: () => {
+    const state = get();
+    return state.currentPresetId ? getPresetById(state.currentPresetId) : undefined;
   },
 
   getStats: () => {
@@ -171,8 +222,8 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
     });
 
     let balanceIndex = 0;
-    const levels = ['producer', 'herbivore', 'carnivore', 'decomposer'];
-    const levelCounts: Record<string, number> = { producer: 0, herbivore: 0, carnivore: 0, decomposer: 0 };
+    const levels = ['producer', 'herbivore', 'omnivore', 'carnivore', 'decomposer'];
+    const levelCounts: Record<string, number> = { producer: 0, herbivore: 0, omnivore: 0, carnivore: 0, decomposer: 0 };
     state.organisms.forEach((o) => {
       const sp = getSpeciesById(o.speciesId);
       if (sp) levelCounts[sp.trophicLevel]++;
@@ -180,7 +231,7 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
 
     const total = state.organisms.length;
     if (total > 0) {
-      const idealRatios = { producer: 0.5, herbivore: 0.3, carnivore: 0.1, decomposer: 0.1 };
+      const idealRatios = { producer: 0.45, herbivore: 0.25, omnivore: 0.1, carnivore: 0.1, decomposer: 0.1 };
       let deviation = 0;
       levels.forEach((level) => {
         const actual = levelCounts[level] / total;

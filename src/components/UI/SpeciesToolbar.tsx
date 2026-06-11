@@ -3,7 +3,7 @@ import { useEcosystemStore } from '@/store/useEcosystemStore';
 import { GlassCard } from '@/components/common/GlassCard';
 import type { TrophicLevel } from '@/types/ecosystem';
 
-const LEVEL_ORDER: TrophicLevel[] = ['producer', 'herbivore', 'carnivore', 'decomposer'];
+const LEVEL_ORDER: TrophicLevel[] = ['producer', 'herbivore', 'omnivore', 'carnivore', 'decomposer'];
 
 export function SpeciesToolbar() {
   const selectedSpeciesId = useEcosystemStore((s) => s.selectedSpeciesId);

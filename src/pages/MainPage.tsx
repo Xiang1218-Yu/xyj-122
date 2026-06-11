@@ -6,6 +6,7 @@ import { EcosystemStats } from '@/components/UI/EcosystemStats';
 import { FoodWebPanel } from '@/components/UI/FoodWebPanel';
 import { SpeciesInfoCard } from '@/components/UI/SpeciesInfoCard';
 import { ControlButtons } from '@/components/UI/ControlButtons';
+import { PresetSelector } from '@/components/UI/PresetSelector';
 import { useEcosystemSimulation } from '@/hooks/useEcosystemSimulation';
 import { useEcosystemStore, AQUARIUM_BOUNDS } from '@/store/useEcosystemStore';
 
@@ -15,6 +16,7 @@ export function MainPage() {
   const selectedSpeciesId = useEcosystemStore((s) => s.selectedSpeciesId);
   const addOrganism = useEcosystemStore((s) => s.addOrganism);
   const setSelectedSpecies = useEcosystemStore((s) => s.setSelectedSpecies);
+  const backgroundGradient = useEcosystemStore((s) => s.backgroundGradient);
 
   useEffect(() => {
     const canvas = document.querySelector('canvas');
@@ -42,7 +44,7 @@ export function MainPage() {
   };
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-gradient-to-b from-[#0A1628] via-[#0d1f3d] to-[#1E3A5F]">
+    <div className={`relative w-full h-screen overflow-hidden bg-gradient-to-b ${backgroundGradient} transition-all duration-1000`}>
       <div className="absolute inset-0 opacity-30">
         <div
           className="absolute inset-0"
@@ -61,6 +63,7 @@ export function MainPage() {
       </div>
 
       <ControlButtons />
+      <PresetSelector />
       <SpeciesToolbar />
       <EcosystemStats />
       <FoodWebPanel />
