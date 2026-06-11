@@ -1,16 +1,19 @@
 import { GlassCard } from '@/components/common/GlassCard';
 import { useEcosystemStore } from '@/store/useEcosystemStore';
-import { getSpeciesById, SPECIES, TROPHIC_LEVEL_COLORS, TROPHIC_LEVEL_LABELS } from '@/data/species';
-import { X, Trash2 } from 'lucide-react';
+import { getSpeciesById, TROPHIC_LEVEL_COLORS, TROPHIC_LEVEL_LABELS } from '@/data/species';
+import { X, Trash2, Crosshair, Eye, EyeOff } from 'lucide-react';
 
 export function SpeciesInfoCard() {
   const selectedOrganismId = useEcosystemStore((s) => s.selectedOrganismId);
+  const trackingOrganismId = useEcosystemStore((s) => s.trackingOrganismId);
   const organisms = useEcosystemStore((s) => s.organisms);
   const setSelectedOrganism = useEcosystemStore((s) => s.setSelectedOrganism);
+  const toggleTracking = useEcosystemStore((s) => s.toggleTracking);
   const removeOrganism = useEcosystemStore((s) => s.removeOrganism);
 
   const organism = organisms.find((o) => o.id === selectedOrganismId);
   const species = organism ? getSpeciesById(organism.speciesId) : null;
+  const isTracking = organism ? trackingOrganismId === organism.id : false;
 
   if (!organism || !species) return null;
 
@@ -34,17 +37,43 @@ export function SpeciesInfoCard() {
       <GlassCard className="p-5 w-72">
         <div className="flex justify-between items-start mb-4">
           <div className="flex items-center gap-3">
-            <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center text-4xl"
-              style={{
-                background: `radial-gradient(circle at 30% 30%, ${species.color}80, ${species.color}30)`,
-                boxShadow: `0 0 20px ${species.color}40`,
-              }}
-            >
-              {species.emoji}
+            <div className="relative">
+              <div
+                className="w-16 h-16 rounded-2xl flex items-center justify-center text-4xl"
+                style={{
+                  background: `radial-gradient(circle at 30% 30%, ${species.color}80, ${species.color}30)`,
+                  boxShadow: isTracking
+                    ? `0 0 30px ${species.color}80, 0 0 60px ${species.color}40`
+                    : `0 0 20px ${species.color}40`,
+                }}
+              >
+                {species.emoji}
+              </div>
+              {isTracking && (
+                <div
+                  className="absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center animate-pulse"
+                  style={{ backgroundColor: species.color }}
+                >
+                  <Crosshair size={14} className="text-white" />
+                </div>
+              )}
             </div>
             <div>
-              <h3 className="text-white font-bold text-xl">{species.name}</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-white font-bold text-xl">{species.name}</h3>
+                {isTracking && (
+                  <span
+                    className="text-xs px-2 py-0.5 rounded-full font-medium animate-pulse"
+                    style={{
+                      backgroundColor: species.color + '40',
+                      color: species.color,
+                      boxShadow: `0 0 10px ${species.color}60`,
+                    }}
+                  >
+                    追踪中
+                  </span>
+                )}
+              </div>
               <div
                 className="text-xs px-2 py-0.5 rounded-full inline-block mt-1"
                 style={{
@@ -150,11 +179,51 @@ export function SpeciesInfoCard() {
         </div>
 
         <button
+          onClick={() => toggleTracking(organism.id)}
+          className={`mt-4 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl transition-all text-sm font-medium ${
+            isTracking
+              ? 'bg-white/10 text-white hover:bg-white/15 border border-white/20'
+              : ''
+          }`}
+          style={
+            !isTracking
+              ? {
+                  backgroundColor: species.color + '30',
+                  color: species.color,
+                  boxShadow: `0 0 15px ${species.color}20`,
+                }
+              : undefined
+          }
+          onMouseEnter={(e) => {
+            if (!isTracking) {
+              e.currentTarget.style.backgroundColor = species.color + '45';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isTracking) {
+              e.currentTarget.style.backgroundColor = species.color + '30';
+            }
+          }}
+        >
+          {isTracking ? (
+            <>
+              <EyeOff size={16} />
+              取消追踪
+            </>
+          ) : (
+            <>
+              <Eye size={16} />
+              开始追踪此生物
+            </>
+          )}
+        </button>
+
+        <button
           onClick={() => {
             removeOrganism(organism.id);
             setSelectedOrganism(null);
           }}
-          className="mt-4 w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors text-sm font-medium"
+          className="mt-2 w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors text-sm font-medium"
         >
           <Trash2 size={16} />
           移除此生物

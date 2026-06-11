@@ -10,7 +10,9 @@ import { PresetSelector } from '@/components/UI/PresetSelector';
 import { useEcosystemSimulation } from '@/hooks/useEcosystemSimulation';
 import { useEcosystemStore, AQUARIUM_BOUNDS } from '@/store/useEcosystemStore';
 import { GlassCard } from '@/components/common/GlassCard';
+import { getSpeciesById } from '@/data/species';
 import type { EcologicalEvent } from '@/types/ecosystem';
+import { Crosshair, X } from 'lucide-react';
 
 const EVENT_EMOJIS: Record<string, string> = {
   red_tide: '🌊',
@@ -121,12 +123,68 @@ function EventNotification({ event }: { event: EcologicalEvent | null }) {
   );
 }
 
+function TrackingStatusBar() {
+  const trackingOrganismId = useEcosystemStore((s) => s.trackingOrganismId);
+  const organisms = useEcosystemStore((s) => s.organisms);
+  const setSelectedOrganism = useEcosystemStore((s) => s.setSelectedOrganism);
+  const setTrackingOrganism = useEcosystemStore((s) => s.setTrackingOrganism);
+
+  const organism = organisms.find((o) => o.id === trackingOrganismId);
+  const species = organism ? getSpeciesById(organism.speciesId) : null;
+
+  if (!trackingOrganismId || !organism || !species) return null;
+
+  return (
+    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 animate-in fade-in slide-in-from-top-4 duration-300">
+      <GlassCard
+        className="px-4 py-2.5 flex items-center gap-3"
+        style={{ borderColor: species.color + '60' }}
+      >
+        <div
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-xl animate-pulse"
+          style={{
+            backgroundColor: species.color + '30',
+            boxShadow: `0 0 12px ${species.color}40`,
+          }}
+        >
+          {species.emoji}
+        </div>
+        <div className="flex items-center gap-2">
+          <Crosshair size={16} style={{ color: species.color }} className="animate-pulse" />
+          <span className="text-white font-medium text-sm">正在追踪</span>
+          <span
+            className="font-bold text-sm"
+            style={{ color: species.color }}
+          >
+            {species.name}
+          </span>
+        </div>
+        <div className="h-6 w-px bg-white/20 mx-1" />
+        <button
+          onClick={() => {
+            setSelectedOrganism(organism.id);
+          }}
+          className="text-white/60 hover:text-white text-xs transition-colors"
+        >
+          查看详情
+        </button>
+        <button
+          onClick={() => setTrackingOrganism(null)}
+          className="w-7 h-7 rounded-lg bg-white/10 hover:bg-red-500/30 hover:text-red-400 text-white/60 flex items-center justify-center transition-all"
+          title="停止追踪"
+        >
+          <X size={14} />
+        </button>
+      </GlassCard>
+    </div>
+  );
+}
+
 export function MainPage() {
   useEcosystemSimulation();
 
   const selectedSpeciesId = useEcosystemStore((s) => s.selectedSpeciesId);
   const addOrganism = useEcosystemStore((s) => s.addOrganism);
-  const setSelectedSpecies = useEcosystemStore((s) => s.setSelectedSpecies);
   const backgroundColors = useEcosystemStore((s) => s.backgroundColors);
   const activeEvent = useEcosystemStore((s) => s.activeEvent);
 
@@ -181,6 +239,7 @@ export function MainPage() {
 
       <EventPulseOverlay event={activeEvent} />
       <EventNotification event={activeEvent} />
+      <TrackingStatusBar />
 
       <ControlButtons />
       <PresetSelector />

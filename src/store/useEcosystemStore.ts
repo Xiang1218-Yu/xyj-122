@@ -8,6 +8,7 @@ interface EcosystemStore {
   organisms: Organism[];
   selectedSpeciesId: string | null;
   selectedOrganismId: string | null;
+  trackingOrganismId: string | null;
   isRunning: boolean;
   simulationTime: number;
   showLabels: boolean;
@@ -22,6 +23,8 @@ interface EcosystemStore {
   updateOrganism: (organismId: string, updates: Partial<Organism>) => void;
   setSelectedSpecies: (speciesId: string | null) => void;
   setSelectedOrganism: (organismId: string | null) => void;
+  setTrackingOrganism: (organismId: string | null) => void;
+  toggleTracking: (organismId: string) => void;
   toggleSimulation: () => void;
   incrementTime: () => void;
   resetEcosystem: () => void;
@@ -89,6 +92,7 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
   organisms: [],
   selectedSpeciesId: null,
   selectedOrganismId: null,
+  trackingOrganismId: null,
   isRunning: true,
   simulationTime: 0,
   showLabels: true,
@@ -116,6 +120,7 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
     set((prev) => ({
       organisms: prev.organisms.filter((o) => o.id !== organismId),
       selectedOrganismId: prev.selectedOrganismId === organismId ? null : prev.selectedOrganismId,
+      trackingOrganismId: prev.trackingOrganismId === organismId ? null : prev.trackingOrganismId,
     }));
   },
 
@@ -143,6 +148,8 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
       organisms: prev.organisms.filter((o) => !idSet.has(o.id)),
       selectedOrganismId:
         prev.selectedOrganismId && idSet.has(prev.selectedOrganismId) ? null : prev.selectedOrganismId,
+      trackingOrganismId:
+        prev.trackingOrganismId && idSet.has(prev.trackingOrganismId) ? null : prev.trackingOrganismId,
     }));
   },
 
@@ -152,6 +159,16 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
 
   setSelectedOrganism: (organismId) => {
     set({ selectedOrganismId: organismId });
+  },
+
+  setTrackingOrganism: (organismId) => {
+    set({ trackingOrganismId: organismId });
+  },
+
+  toggleTracking: (organismId) => {
+    set((prev) => ({
+      trackingOrganismId: prev.trackingOrganismId === organismId ? null : organismId,
+    }));
   },
 
   toggleSimulation: () => {
@@ -167,6 +184,7 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
       organisms: [],
       selectedSpeciesId: null,
       selectedOrganismId: null,
+      trackingOrganismId: null,
       simulationTime: 0,
       isRunning: true,
       currentPresetId: null,
@@ -203,6 +221,7 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
       organisms: [],
       selectedSpeciesId: null,
       selectedOrganismId: null,
+      trackingOrganismId: null,
       simulationTime: 0,
       isRunning: false,
       currentPresetId: presetId,

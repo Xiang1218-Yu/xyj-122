@@ -4,7 +4,7 @@ import { useEcosystemStore } from '@/store/useEcosystemStore';
 import { simulateStep } from '@/utils/ecosystemSimulator';
 import { AQUARIUM_BOUNDS } from '@/store/useEcosystemStore';
 import { getSpeciesById } from '@/data/species';
-import type { EcologicalEvent, EcologicalEventType, PresetEcosystem } from '@/types/ecosystem';
+import type { Organism, EcologicalEvent, EcologicalEventType, PresetEcosystem } from '@/types/ecosystem';
 
 const EVENT_CONFIGS: Record<EcologicalEventType, {
   name: string;
@@ -106,12 +106,12 @@ function applyEventEffects(
   currentTime: number,
   state: ReturnType<typeof useEcosystemStore.getState>
 ): {
-  updates: { id: string; updates: Partial<any> }[];
+  updates: { id: string; updates: Partial<Organism> }[];
   toRemove: string[];
   toAdd: { speciesId: string; position: THREE.Vector3 }[];
   waterColor?: string;
 } {
-  const updates: { id: string; updates: Partial<any> }[] = [];
+  const updates: { id: string; updates: Partial<Organism> }[] = [];
   const toRemove: string[] = [];
   const toAdd: { speciesId: string; position: THREE.Vector3 }[] = [];
   let waterColor: string | undefined;

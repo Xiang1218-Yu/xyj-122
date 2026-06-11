@@ -1,4 +1,4 @@
-import { useRef, useMemo, useState, useEffect } from 'react';
+import { useRef, useMemo, useEffect } from 'react';
 import { Canvas, useFrame, useThree, ThreeEvent } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
@@ -7,6 +7,7 @@ import { Organism3D } from '@/components/Organisms/Organism';
 import { useEcosystemStore } from '@/store/useEcosystemStore';
 import { AQUARIUM_BOUNDS } from '@/store/useEcosystemStore';
 import { getSpeciesById } from '@/data/species';
+import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 
 function Glass() {
   const thickness = 0.08;
@@ -287,6 +288,42 @@ interface Aquarium3DProps {
   onAquariumClick: (point: THREE.Vector3) => void;
 }
 
+function TrackingCameraController({ controlsRef }: { controlsRef: React.RefObject<OrbitControlsImpl> }) {
+  const { camera } = useThree();
+  const organisms = useEcosystemStore((s) => s.organisms);
+  const trackingOrganismId = useEcosystemStore((s) => s.trackingOrganismId);
+  const prevTrackingIdRef = useRef<string | null>(null);
+  const initialCameraOffsetRef = useRef<THREE.Vector3>(new THREE.Vector3());
+
+  useFrame(() => {
+    const controls = controlsRef.current;
+    if (!controls) return;
+
+    if (trackingOrganismId) {
+      const organism = organisms.find((o) => o.id === trackingOrganismId);
+      if (organism) {
+        if (prevTrackingIdRef.current !== trackingOrganismId) {
+          const offset = new THREE.Vector3().subVectors(camera.position, controls.target);
+          initialCameraOffsetRef.current.copy(offset);
+          prevTrackingIdRef.current = trackingOrganismId;
+        }
+
+        const targetPos = organism.position;
+        controls.target.lerp(targetPos, 0.08);
+
+        const desiredCameraPos = new THREE.Vector3().copy(targetPos).add(initialCameraOffsetRef.current);
+        camera.position.lerp(desiredCameraPos, 0.06);
+
+        controls.update();
+      }
+    } else {
+      prevTrackingIdRef.current = null;
+    }
+  });
+
+  return null;
+}
+
 function SceneEnvironment() {
   const { scene } = useThree();
   const waterColor = useEcosystemStore((s) => s.waterColor);
@@ -343,7 +380,7 @@ function SceneEnvironment() {
 
 export function Aquarium3D({ onAquariumClick }: Aquarium3DProps) {
   const { organisms } = useEcosystemStore();
-  const selectedSpeciesId = useEcosystemStore((s) => s.selectedSpeciesId);
+  const controlsRef = useRef<OrbitControlsImpl>(null);
 
   return (
     <Canvas
@@ -383,7 +420,10 @@ export function Aquarium3D({ onAquariumClick }: Aquarium3DProps) {
         <Bloom luminanceThreshold={0.2} luminanceSmoothing={0.9} height={300} intensity={0.5} />
       </EffectComposer>
 
+      <TrackingCameraController controlsRef={controlsRef} />
+
       <OrbitControls
+        ref={controlsRef}
         enablePan={false}
         minDistance={4}
         maxDistance={15}
