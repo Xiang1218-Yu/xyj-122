@@ -60,6 +60,7 @@ function EventPulseOverlay({ event }: { event: EcologicalEvent | null }) {
 function EventNotification({ event }: { event: EcologicalEvent | null }) {
   const [displayEvent, setDisplayEvent] = useState<EcologicalEvent | null>(null);
   const [isExiting, setIsExiting] = useState(false);
+  const simulationTime = useEcosystemStore((s) => s.simulationTime);
 
   useEffect(() => {
     if (event && (!displayEvent || event.id !== displayEvent.id)) {
@@ -76,8 +77,6 @@ function EventNotification({ event }: { event: EcologicalEvent | null }) {
   }, [event, displayEvent]);
 
   if (!displayEvent) return null;
-
-  const simulationTime = useEcosystemStore((s) => s.simulationTime);
   const progress = displayEvent
     ? Math.min(100, ((simulationTime - displayEvent.startTime) / displayEvent.duration) * 100)
     : 0;

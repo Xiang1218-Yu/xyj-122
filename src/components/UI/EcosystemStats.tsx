@@ -11,9 +11,9 @@ const EVENT_EMOJIS: Record<string, string> = {
 };
 
 function EventIndicator({ event }: { event: EcologicalEvent | null }) {
-  if (!event) return null;
-
   const simulationTime = useEcosystemStore((s) => s.simulationTime);
+
+  if (!event) return null;
   const progress = Math.min(100, ((simulationTime - event.startTime) / event.duration) * 100);
 
   return (
