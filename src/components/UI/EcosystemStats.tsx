@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { GlassCard } from '@/components/common/GlassCard';
+import { CollapsibleDraggablePanel } from '@/components/common/CollapsibleDraggablePanel';
 import { useEcosystemStore } from '@/store/useEcosystemStore';
 import { SPECIES, TROPHIC_LEVEL_COLORS, TROPHIC_LEVEL_LABELS } from '@/data/species';
 import type { TrophicLevel, EcologicalEvent } from '@/types/ecosystem';
@@ -92,88 +92,91 @@ export function EcosystemStats() {
   };
 
   return (
-    <div className="absolute bottom-36 left-4 z-30">
-      <GlassCard className="p-4 w-72">
-        <h3 className="text-white font-bold text-lg mb-3 flex items-center gap-2">
-          <span className="text-xl">📊</span> 生态数据
-        </h3>
+    <CollapsibleDraggablePanel
+      id="ecosystem-stats"
+      title="生态数据"
+      emoji="📊"
+      defaultPosition={{ left: 16, bottom: 144 }}
+      defaultExpanded={true}
+      zIndex={30}
+      width={288}
+      contentClassName="p-4 pt-0"
+    >
+      <EventIndicator event={activeEvent} />
 
-        <EventIndicator event={activeEvent} />
-
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <div className="bg-white/5 rounded-lg p-2">
-            <div className="text-white/60 text-xs">模拟时间</div>
-            <div className="text-white font-mono text-lg">{formatTime(stats.time)}</div>
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="bg-white/5 rounded-lg p-2">
+          <div className="text-white/60 text-xs">模拟时间</div>
+          <div className="text-white font-mono text-lg">{formatTime(stats.time)}</div>
+        </div>
+        <div className="bg-white/5 rounded-lg p-2">
+          <div className="text-white/60 text-xs">生物总数</div>
+          <div className="text-white font-mono text-lg">{stats.totalOrganisms}</div>
+        </div>
+        <div className="bg-white/5 rounded-lg p-2 col-span-2">
+          <div className="text-white/60 text-xs flex items-center gap-1">
+            <span>⏱️</span> 稳定运行时间
           </div>
-          <div className="bg-white/5 rounded-lg p-2">
-            <div className="text-white/60 text-xs">生物总数</div>
-            <div className="text-white font-mono text-lg">{stats.totalOrganisms}</div>
-          </div>
-          <div className="bg-white/5 rounded-lg p-2 col-span-2">
-            <div className="text-white/60 text-xs flex items-center gap-1">
-              <span>⏱️</span> 稳定运行时间
-            </div>
-            <div className="text-emerald-400 font-mono text-lg">
-              {formatTime(stats.stableTime)}
-            </div>
+          <div className="text-emerald-400 font-mono text-lg">
+            {formatTime(stats.stableTime)}
           </div>
         </div>
+      </div>
 
-        <div className="mb-4">
-          <div className="flex justify-between items-center mb-1">
-            <span className="text-white/80 text-sm">生态平衡指数</span>
-            <span
-              className="font-bold text-sm"
-              style={{ color: getBalanceColor(stats.balanceIndex) }}
-            >
-              {Math.round(stats.balanceIndex)}%
-            </span>
-          </div>
-          <div className="h-3 bg-white/10 rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all duration-500"
-              style={{
-                width: `${stats.balanceIndex}%`,
-                backgroundColor: getBalanceColor(stats.balanceIndex),
-                boxShadow: `0 0 10px ${getBalanceColor(stats.balanceIndex)}`,
-              }}
-            />
-          </div>
-          <div
-            className="text-right text-xs mt-1"
+      <div className="mb-4">
+        <div className="flex justify-between items-center mb-1">
+          <span className="text-white/80 text-sm">生态平衡指数</span>
+          <span
+            className="font-bold text-sm"
             style={{ color: getBalanceColor(stats.balanceIndex) }}
           >
-            {getBalanceLabel(stats.balanceIndex)}
-          </div>
+            {Math.round(stats.balanceIndex)}%
+          </span>
         </div>
+        <div className="h-3 bg-white/10 rounded-full overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all duration-500"
+            style={{
+              width: `${stats.balanceIndex}%`,
+              backgroundColor: getBalanceColor(stats.balanceIndex),
+              boxShadow: `0 0 10px ${getBalanceColor(stats.balanceIndex)}`,
+            }}
+          />
+        </div>
+        <div
+          className="text-right text-xs mt-1"
+          style={{ color: getBalanceColor(stats.balanceIndex) }}
+        >
+          {getBalanceLabel(stats.balanceIndex)}
+        </div>
+      </div>
 
-        <div className="space-y-2">
-          <div className="text-white/60 text-xs mb-2">各营养级分布</div>
-          {(Object.keys(levelData) as TrophicLevel[]).map((level) => {
-            const count = levelData[level];
-            const percent = stats.totalOrganisms > 0 ? (count / stats.totalOrganisms) * 100 : 0;
-            return (
-              <div key={level}>
-                <div className="flex justify-between text-xs mb-0.5">
-                  <span style={{ color: TROPHIC_LEVEL_COLORS[level] }}>
-                    {TROPHIC_LEVEL_LABELS[level]}
-                  </span>
-                  <span className="text-white/80">{count}</span>
-                </div>
-                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-300"
-                    style={{
-                      width: `${percent}%`,
-                      backgroundColor: TROPHIC_LEVEL_COLORS[level],
-                    }}
-                  />
-                </div>
+      <div className="space-y-2">
+        <div className="text-white/60 text-xs mb-2">各营养级分布</div>
+        {(Object.keys(levelData) as TrophicLevel[]).map((level) => {
+          const count = levelData[level];
+          const percent = stats.totalOrganisms > 0 ? (count / stats.totalOrganisms) * 100 : 0;
+          return (
+            <div key={level}>
+              <div className="flex justify-between text-xs mb-0.5">
+                <span style={{ color: TROPHIC_LEVEL_COLORS[level] }}>
+                  {TROPHIC_LEVEL_LABELS[level]}
+                </span>
+                <span className="text-white/80">{count}</span>
               </div>
-            );
-          })}
-        </div>
-      </GlassCard>
-    </div>
+              <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-300"
+                  style={{
+                    width: `${percent}%`,
+                    backgroundColor: TROPHIC_LEVEL_COLORS[level],
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </CollapsibleDraggablePanel>
   );
 }

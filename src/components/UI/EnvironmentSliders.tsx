@@ -1,8 +1,8 @@
-import { useState, useMemo } from 'react';
-import { GlassCard } from '@/components/common/GlassCard';
+import { useMemo } from 'react';
+import { CollapsibleDraggablePanel } from '@/components/common/CollapsibleDraggablePanel';
 import { useEcosystemStore } from '@/store/useEcosystemStore';
-import { getSpeciesById, SPECIES } from '@/data/species';
-import { Thermometer, Sun, ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { getSpeciesById } from '@/data/species';
+import { Info } from 'lucide-react';
 
 function getTemperatureColor(temp: number): string {
   if (temp < 12) return '#60A5FA';
@@ -64,7 +64,6 @@ function getStatusColor(status: string): string {
 }
 
 export function EnvironmentSliders() {
-  const [isExpanded, setIsExpanded] = useState(false);
   const waterTemperature = useEcosystemStore((s) => s.waterTemperature);
   const lightIntensity = useEcosystemStore((s) => s.lightIntensity);
   const setWaterTemperature = useEcosystemStore((s) => s.setWaterTemperature);
@@ -136,177 +135,163 @@ export function EnvironmentSliders() {
     return sum / speciesFitnessInfo.length;
   }, [speciesFitnessInfo]);
 
-  return (
-    <div className="absolute bottom-4 right-4 z-40">
-      <GlassCard className="w-80 overflow-hidden">
-        <div
-          className="px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors"
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/30 to-orange-500/30 flex items-center justify-center">
-              <Thermometer size={16} className="text-cyan-400" />
-            </div>
-            <div>
-              <h3 className="text-white font-bold text-sm">环境参数</h3>
-              <div className="flex items-center gap-1 text-xs">
-                <span className="text-white/60">生态适应度:</span>
-                <span
-                  className="font-bold"
-                  style={{ color: getFitnessColor(averageFitness) }}
-                >
-                  {Math.round(averageFitness * 100)}%
-                </span>
-              </div>
-            </div>
-          </div>
-          <button className="p-1 text-white/60 hover:text-white transition-colors">
-            {isExpanded ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
-          </button>
-        </div>
-
-        {isExpanded && (
-          <div className="px-4 pb-4 space-y-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">{getTemperatureEmoji(waterTemperature)}</span>
-                  <span className="text-white font-medium text-sm">水温</span>
-                </div>
-                <span
-                  className="font-bold text-lg"
-                  style={{ color: getTemperatureColor(waterTemperature) }}
-                >
-                  {waterTemperature.toFixed(0)}°C
-                </span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="40"
-                step="1"
-                value={waterTemperature}
-                onChange={(e) => setWaterTemperature(Number(e.target.value))}
-                className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer"
-                style={{
-                  background: `linear-gradient(to right, ${getTemperatureColor(0)} 0%, ${getTemperatureColor(20)} 50%, ${getTemperatureColor(40)} 100%)`,
-                }}
-              />
-              <div className="flex justify-between text-xs text-white/40">
-                <span>0°C 冰冻</span>
-                <span>20°C 温和</span>
-                <span>40°C 高温</span>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">{getLightEmoji(lightIntensity)}</span>
-                  <span className="text-white font-medium text-sm">光照强度</span>
-                </div>
-                <span
-                  className="font-bold text-lg"
-                  style={{ color: getLightColor(lightIntensity) }}
-                >
-                  {Math.round(lightIntensity * 100)}%
-                </span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.05"
-                value={lightIntensity}
-                onChange={(e) => setLightIntensity(Number(e.target.value))}
-                className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer"
-                style={{
-                  background: `linear-gradient(to right, #1F2937 0%, ${getLightColor(0.5)} 50%, ${getLightColor(1)} 100%)`,
-                }}
-              />
-              <div className="flex justify-between text-xs text-white/40">
-                <span>0% 黑暗</span>
-                <span>50% 适中</span>
-                <span>100% 强光</span>
-              </div>
-            </div>
-
-            {speciesFitnessInfo.length > 0 && (
-              <div className="pt-2 border-t border-white/10">
-                <div className="flex items-center gap-1 mb-2 text-white/60 text-xs">
-                  <Info size={12} />
-                  <span>当前物种适应情况</span>
-                </div>
-                <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                  {speciesFitnessInfo.map((info) => {
-                    if (!info) return null;
-                    const { species, fitness, tempStatus, lightStatus, isSelected } = info;
-                    return (
-                      <div
-                        key={species.id}
-                        className={`flex items-center gap-2 p-1.5 rounded-lg transition-colors ${
-                          isSelected ? 'bg-white/10' : 'hover:bg-white/5'
-                        }`}
-                      >
-                        <span className="text-lg">{species.emoji}</span>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-white text-sm font-medium truncate">
-                              {species.name}
-                            </span>
-                            <span
-                              className="text-xs font-bold"
-                              style={{ color: getFitnessColor(fitness) }}
-                            >
-                              {Math.round(fitness * 100)}%
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2 text-xs">
-                            <span
-                              className="px-1.5 py-0.5 rounded text-white/80"
-                              style={{
-                                backgroundColor: getStatusColor(tempStatus) + '30',
-                                color: getStatusColor(tempStatus),
-                              }}
-                            >
-                              {tempStatus}
-                            </span>
-                            <span
-                              className="px-1.5 py-0.5 rounded text-white/80"
-                              style={{
-                                backgroundColor: getStatusColor(lightStatus) + '30',
-                                color: getStatusColor(lightStatus),
-                              }}
-                            >
-                              {lightStatus}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="w-16 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full transition-all duration-300"
-                            style={{
-                              width: `${fitness * 100}%`,
-                              backgroundColor: getFitnessColor(fitness),
-                            }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            <div className="pt-2 border-t border-white/10">
-              <p className="text-white/50 text-xs leading-relaxed">
-                💡 调节水温和光照强度，观察不同物种的适应情况。
-                环境不适宜会导致生物能量消耗增加、繁殖率下降，甚至死亡。
-              </p>
-            </div>
-          </div>
-        )}
-      </GlassCard>
+  const headerExtra = (
+    <div className="text-xs text-white/60 mr-1">
+      <span style={{ color: getFitnessColor(averageFitness) }} className="font-bold">
+        {Math.round(averageFitness * 100)}%
+      </span>
     </div>
+  );
+
+  return (
+    <CollapsibleDraggablePanel
+      id="environment-sliders"
+      title="环境参数"
+      emoji="🌡️"
+      defaultPosition={{ right: 16, bottom: 16 }}
+      defaultExpanded={false}
+      zIndex={40}
+      width={320}
+      contentClassName="px-4 pb-4 space-y-4"
+      headerExtra={headerExtra}
+    >
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">{getTemperatureEmoji(waterTemperature)}</span>
+            <span className="text-white font-medium text-sm">水温</span>
+          </div>
+          <span
+            className="font-bold text-lg"
+            style={{ color: getTemperatureColor(waterTemperature) }}
+          >
+            {waterTemperature.toFixed(0)}°C
+          </span>
+        </div>
+        <input
+          type="range"
+          min="0"
+          max="40"
+          step="1"
+          value={waterTemperature}
+          onChange={(e) => setWaterTemperature(Number(e.target.value))}
+          className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer"
+          style={{
+            background: `linear-gradient(to right, ${getTemperatureColor(0)} 0%, ${getTemperatureColor(20)} 50%, ${getTemperatureColor(40)} 100%)`,
+          }}
+        />
+        <div className="flex justify-between text-xs text-white/40">
+          <span>0°C 冰冻</span>
+          <span>20°C 温和</span>
+          <span>40°C 高温</span>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">{getLightEmoji(lightIntensity)}</span>
+            <span className="text-white font-medium text-sm">光照强度</span>
+          </div>
+          <span
+            className="font-bold text-lg"
+            style={{ color: getLightColor(lightIntensity) }}
+          >
+            {Math.round(lightIntensity * 100)}%
+          </span>
+        </div>
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.05"
+          value={lightIntensity}
+          onChange={(e) => setLightIntensity(Number(e.target.value))}
+          className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer"
+          style={{
+            background: `linear-gradient(to right, #1F2937 0%, ${getLightColor(0.5)} 50%, ${getLightColor(1)} 100%)`,
+          }}
+        />
+        <div className="flex justify-between text-xs text-white/40">
+          <span>0% 黑暗</span>
+          <span>50% 适中</span>
+          <span>100% 强光</span>
+        </div>
+      </div>
+
+      {speciesFitnessInfo.length > 0 && (
+        <div className="pt-2 border-t border-white/10">
+          <div className="flex items-center gap-1 mb-2 text-white/60 text-xs">
+            <Info size={12} />
+            <span>当前物种适应情况</span>
+          </div>
+          <div className="space-y-1.5 max-h-48 overflow-y-auto">
+            {speciesFitnessInfo.map((info) => {
+              if (!info) return null;
+              const { species, fitness, tempStatus, lightStatus, isSelected } = info;
+              return (
+                <div
+                  key={species.id}
+                  className={`flex items-center gap-2 p-1.5 rounded-lg transition-colors ${
+                    isSelected ? 'bg-white/10' : 'hover:bg-white/5'
+                  }`}
+                >
+                  <span className="text-lg">{species.emoji}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-white text-sm font-medium truncate">
+                        {species.name}
+                      </span>
+                      <span
+                        className="text-xs font-bold"
+                        style={{ color: getFitnessColor(fitness) }}
+                      >
+                        {Math.round(fitness * 100)}%
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      <span
+                        className="px-1.5 py-0.5 rounded text-white/80"
+                        style={{
+                          backgroundColor: getStatusColor(tempStatus) + '30',
+                          color: getStatusColor(tempStatus),
+                        }}
+                      >
+                        {tempStatus}
+                      </span>
+                      <span
+                        className="px-1.5 py-0.5 rounded text-white/80"
+                        style={{
+                          backgroundColor: getStatusColor(lightStatus) + '30',
+                          color: getStatusColor(lightStatus),
+                        }}
+                      >
+                        {lightStatus}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="w-16 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-300"
+                      style={{
+                        width: `${fitness * 100}%`,
+                        backgroundColor: getFitnessColor(fitness),
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <div className="pt-2 border-t border-white/10">
+        <p className="text-white/50 text-xs leading-relaxed">
+          💡 调节水温和光照强度，观察不同物种的适应情况。
+          环境不适宜会导致生物能量消耗增加、繁殖率下降，甚至死亡。
+        </p>
+      </div>
+    </CollapsibleDraggablePanel>
   );
 }
