@@ -64,7 +64,7 @@ function getStatusColor(status: string): string {
 }
 
 export function EnvironmentSliders() {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const waterTemperature = useEcosystemStore((s) => s.waterTemperature);
   const lightIntensity = useEcosystemStore((s) => s.lightIntensity);
   const setWaterTemperature = useEcosystemStore((s) => s.setWaterTemperature);
@@ -137,7 +137,7 @@ export function EnvironmentSliders() {
   }, [speciesFitnessInfo]);
 
   return (
-    <div className="absolute bottom-4 left-4 z-40">
+    <div className="absolute bottom-4 right-4 z-40">
       <GlassCard className="w-80 overflow-hidden">
         <div
           className="px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors"

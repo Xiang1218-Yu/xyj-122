@@ -11,6 +11,8 @@ export const PRESET_ECOSYSTEMS: PresetEcosystem[] = [
     backgroundColors: ['#0A1628', '#1E3A5F', '#0F766E'],
     waterColor: '#0EA5E9',
     ambientLightIntensity: 0.8,
+    waterTemperature: 22,
+    lightIntensity: 0.8,
     species: [
       { speciesId: 'seaweed', count: 5 },
       { speciesId: 'grass', count: 6 },
@@ -41,6 +43,8 @@ export const PRESET_ECOSYSTEMS: PresetEcosystem[] = [
     backgroundColors: ['#052E16', '#14532D', '#166534'],
     waterColor: '#22C55E',
     ambientLightIntensity: 0.6,
+    waterTemperature: 26,
+    lightIntensity: 0.55,
     species: [
       { speciesId: 'fern', count: 4 },
       { speciesId: 'orchid', count: 2 },
@@ -70,6 +74,8 @@ export const PRESET_ECOSYSTEMS: PresetEcosystem[] = [
     backgroundColors: ['#1F2937', '#365314', '#3F3F46'],
     waterColor: '#65A30D',
     ambientLightIntensity: 0.4,
+    waterTemperature: 29,
+    lightIntensity: 0.35,
     species: [
       { speciesId: 'polluted_algae', count: 8 },
       { speciesId: 'tubifex', count: 5 },
@@ -95,6 +101,8 @@ export const PRESET_ECOSYSTEMS: PresetEcosystem[] = [
     backgroundColors: ['#0C4A6E', '#0369A1', '#0891B2'],
     waterColor: '#06B6D4',
     ambientLightIntensity: 0.9,
+    waterTemperature: 27,
+    lightIntensity: 0.9,
     species: [
       { speciesId: 'coral', count: 3 },
       { speciesId: 'seaweed', count: 4 },
@@ -123,6 +131,8 @@ export const PRESET_ECOSYSTEMS: PresetEcosystem[] = [
     backgroundColors: ['#0A1628', '#0d1f3d', '#1E3A5F'],
     waterColor: '#22D3EE',
     ambientLightIntensity: 0.75,
+    waterTemperature: 24,
+    lightIntensity: 0.75,
     species: [
       { speciesId: 'seaweed', count: 4 },
       { speciesId: 'grass', count: 5 },
@@ -150,6 +160,8 @@ export const PRESET_ECOSYSTEMS: PresetEcosystem[] = [
     backgroundColors: ['#1E1B4B', '#312E81', '#3730A3'],
     waterColor: '#6366F1',
     ambientLightIntensity: 0.7,
+    waterTemperature: 23,
+    lightIntensity: 0.7,
     species: [
       { speciesId: 'grass', count: 6 },
       { speciesId: 'seaweed', count: 4 },

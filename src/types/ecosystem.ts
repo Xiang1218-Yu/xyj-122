@@ -115,6 +115,8 @@ export interface PresetEcosystem {
   backgroundColors: [string, string, string];
   waterColor: string;
   ambientLightIntensity: number;
+  waterTemperature: number;
+  lightIntensity: number;
   species: PresetSpeciesConfig[];
   educationalInfo: string;
   expectedObservations: string[];
