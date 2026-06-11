@@ -66,6 +66,7 @@ interface EcosystemStore {
   waterColor: string;
   ambientLightIntensity: number;
   activeEvent: EcologicalEvent | null;
+  showTimeline: boolean;
 
   history: HistorySnapshot[];
   isRewinding: boolean;
@@ -90,6 +91,7 @@ interface EcosystemStore {
   triggerEvent: (event: EcologicalEvent) => void;
   clearEvent: () => void;
   setWaterColor: (color: string) => void;
+  toggleTimeline: () => void;
 
   recordSnapshot: () => void;
   seekToTime: (targetTime: number) => void;
@@ -159,6 +161,7 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
   waterColor: '#22D3EE',
   ambientLightIntensity: 0.7,
   activeEvent: null,
+  showTimeline: true,
 
   history: [],
   isRewinding: false,
@@ -265,6 +268,7 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
       waterColor: '#22D3EE',
       ambientLightIntensity: 0.7,
       activeEvent: null,
+      showTimeline: true,
       history: [],
       isRewinding: false,
       rewindTime: 0,
@@ -305,6 +309,7 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
       waterColor: preset.waterColor,
       ambientLightIntensity: preset.ambientLightIntensity,
       activeEvent: null,
+      showTimeline: true,
       history: [],
       isRewinding: false,
       rewindTime: 0,
@@ -333,6 +338,10 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
 
   setWaterColor: (color) => {
     set({ waterColor: color });
+  },
+
+  toggleTimeline: () => {
+    set((prev) => ({ showTimeline: !prev.showTimeline }));
   },
 
   getStats: () => {

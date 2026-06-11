@@ -1,6 +1,6 @@
 import { GlassCard } from '@/components/common/GlassCard';
 import { useEcosystemStore } from '@/store/useEcosystemStore';
-import { Play, Pause, RotateCcw, Eye, EyeOff, Sparkles } from 'lucide-react';
+import { Play, Pause, RotateCcw, Eye, EyeOff, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 
 export function ControlButtons() {
   const isRunning = useEcosystemStore((s) => s.isRunning);
@@ -8,6 +8,8 @@ export function ControlButtons() {
   const resetEcosystem = useEcosystemStore((s) => s.resetEcosystem);
   const showLabels = useEcosystemStore((s) => s.showLabels);
   const toggleLabels = useEcosystemStore((s) => s.toggleLabels);
+  const showTimeline = useEcosystemStore((s) => s.showTimeline);
+  const toggleTimeline = useEcosystemStore((s) => s.toggleTimeline);
   const selectedSpeciesId = useEcosystemStore((s) => s.selectedSpeciesId);
 
   return (
@@ -49,6 +51,14 @@ export function ControlButtons() {
             title="重置生态缸"
           >
             <RotateCcw size={18} />
+          </button>
+
+          <button
+            onClick={toggleTimeline}
+            className="p-2 rounded-xl hover:bg-white/10 transition-colors text-white"
+            title={showTimeline ? '收起时间轴' : '展开时间轴'}
+          >
+            {showTimeline ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
           </button>
         </div>
       </GlassCard>

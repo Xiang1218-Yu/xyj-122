@@ -17,6 +17,7 @@ export function Timeline() {
   const isRunning = useEcosystemStore((s) => s.isRunning);
   const isRewinding = useEcosystemStore((s) => s.isRewinding);
   const rewindTime = useEcosystemStore((s) => s.rewindTime);
+  const showTimeline = useEcosystemStore((s) => s.showTimeline);
   const toggleSimulation = useEcosystemStore((s) => s.toggleSimulation);
   const seekToTime = useEcosystemStore((s) => s.seekToTime);
   const exitRewind = useEcosystemStore((s) => s.exitRewind);
@@ -134,7 +135,13 @@ export function Timeline() {
   const hasHistory = history.length > 0;
 
   return (
-    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 w-[min(90vw,900px)]">
+    <div
+      className={`absolute left-1/2 -translate-x-1/2 z-40 w-[min(90vw,900px)] transition-all duration-500 ease-out ${
+        showTimeline
+          ? 'bottom-4 opacity-100 translate-y-0'
+          : '-bottom-full opacity-0 translate-y-8 pointer-events-none'
+      }`}
+    >
       <GlassCard className="px-5 py-3">
         <div className="flex items-center gap-3 mb-2">
           <div className="flex items-center gap-2">
