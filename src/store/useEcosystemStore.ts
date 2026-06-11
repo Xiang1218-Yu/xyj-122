@@ -67,6 +67,7 @@ interface EcosystemStore {
   trackingOrganismId: string | null;
   isRunning: boolean;
   simulationTime: number;
+  stableSimulationTime: number;
   showLabels: boolean;
   currentPresetId: string | null;
   backgroundColors: [string, string, string];
@@ -178,6 +179,7 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
   trackingOrganismId: null,
   isRunning: true,
   simulationTime: 0,
+  stableSimulationTime: 0,
   showLabels: true,
   currentPresetId: null,
   backgroundColors: ['#0A1628', '#0d1f3d', '#1E3A5F'] as [string, string, string],
@@ -290,7 +292,39 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
 
   incrementTime: () => {
     if (get().isRewinding) return;
-    set((prev) => ({ simulationTime: prev.simulationTime + 1 }));
+    set((prev) => {
+      const hasOrganisms = prev.organisms.length > 0;
+      let stableInc = 0;
+      if (hasOrganisms) {
+        const stats = (() => {
+          const populationBySpecies: Record<string, number> = {};
+          SPECIES.forEach((s) => { populationBySpecies[s.id] = 0; });
+          prev.organisms.forEach((o) => { populationBySpecies[o.speciesId] = (populationBySpecies[o.speciesId] || 0) + 1; });
+          let balanceIndex = 0;
+          const levels = ['producer', 'herbivore', 'omnivore', 'carnivore', 'decomposer'];
+          const levelCounts: Record<string, number> = { producer: 0, herbivore: 0, omnivore: 0, carnivore: 0, decomposer: 0 };
+          prev.organisms.forEach((o) => { const sp = getSpeciesById(o.speciesId); if (sp) levelCounts[sp.trophicLevel]++; });
+          const total = prev.organisms.length;
+          if (total > 0) {
+            const idealRatios = { producer: 0.45, herbivore: 0.25, omnivore: 0.1, carnivore: 0.1, decomposer: 0.1 };
+            let deviation = 0;
+            levels.forEach((level) => {
+              const actual = levelCounts[level] / total;
+              deviation += Math.abs(actual - idealRatios[level]);
+            });
+            balanceIndex = Math.max(0, 100 - deviation * 100);
+          }
+          return { balanceIndex, totalOrganisms: total };
+        })();
+        if (stats.balanceIndex > 0) {
+          stableInc = 1;
+        }
+      }
+      return {
+        simulationTime: prev.simulationTime + 1,
+        stableSimulationTime: prev.stableSimulationTime + stableInc,
+      };
+    });
   },
 
   resetEcosystem: () => {
@@ -309,6 +343,7 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
         selectedOrganismId: null,
         trackingOrganismId: null,
         simulationTime: 0,
+        stableSimulationTime: 0,
         isRunning: true,
         currentPresetId: null,
         backgroundColors: ['#0A1628', '#0d1f3d', '#1E3A5F'] as [string, string, string],
@@ -355,6 +390,7 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
       selectedOrganismId: null,
       trackingOrganismId: null,
       simulationTime: 0,
+      stableSimulationTime: 0,
       isRunning: false,
       currentPresetId: presetId,
       backgroundColors: preset.backgroundColors,
@@ -437,6 +473,7 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
 
     return {
       time: state.isRewinding ? state.rewindTime : state.simulationTime,
+      stableTime: state.stableSimulationTime,
       isRunning: state.isRunning,
       balanceIndex,
       populationBySpecies,
@@ -574,7 +611,7 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
       let currentValue = 0;
       switch (challenge.type) {
         case 'survival_time':
-          currentValue = Math.floor(stats.time);
+          currentValue = Math.floor(state.stableSimulationTime);
           break;
         case 'species_diversity':
           currentValue = presentSpeciesCount;
@@ -610,10 +647,14 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
       };
     });
 
-    set({
+    const updates: Partial<EcosystemStore> = {
       challengeProgress: newProgress,
-      newlyCompletedChallenge: newCompletedChallenge,
-    });
+    };
+    if (newCompletedChallenge) {
+      updates.newlyCompletedChallenge = newCompletedChallenge;
+    }
+
+    set(updates);
   },
 
   clearNewlyCompletedChallenge: () => {

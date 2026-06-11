@@ -76,6 +76,7 @@ export interface Organism {
 
 export interface EcosystemStats {
   time: number;
+  stableTime: number;
   isRunning: boolean;
   balanceIndex: number;
   populationBySpecies: Record<string, number>;

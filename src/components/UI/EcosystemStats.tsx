@@ -109,6 +109,14 @@ export function EcosystemStats() {
             <div className="text-white/60 text-xs">生物总数</div>
             <div className="text-white font-mono text-lg">{stats.totalOrganisms}</div>
           </div>
+          <div className="bg-white/5 rounded-lg p-2 col-span-2">
+            <div className="text-white/60 text-xs flex items-center gap-1">
+              <span>⏱️</span> 稳定运行时间
+            </div>
+            <div className="text-emerald-400 font-mono text-lg">
+              {formatTime(stats.stableTime)}
+            </div>
+          </div>
         </div>
 
         <div className="mb-4">
