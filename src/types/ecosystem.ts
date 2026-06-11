@@ -2,6 +2,35 @@ import type { Vector3 } from 'three';
 
 export type TrophicLevel = 'producer' | 'herbivore' | 'carnivore' | 'decomposer' | 'omnivore';
 
+export interface SerializedVector3 {
+  x: number;
+  y: number;
+  z: number;
+}
+
+export interface SerializedOrganism {
+  id: string;
+  speciesId: string;
+  position: SerializedVector3;
+  velocity: SerializedVector3;
+  energy: number;
+  age: number;
+  state: OrganismState;
+  targetId: string | null;
+  rotation: number;
+  scale: number;
+}
+
+export interface HistorySnapshot {
+  time: number;
+  organisms: SerializedOrganism[];
+  totalOrganisms: number;
+  populationBySpecies: Record<string, number>;
+  balanceIndex: number;
+  activeEventId: string | null;
+  waterColor: string;
+}
+
 export type OrganismState = 'idle' | 'wandering' | 'hunting' | 'fleeing' | 'eating' | 'reproducing';
 
 export interface Species {

@@ -12,9 +12,12 @@ const EVENT_EMOJIS: Record<string, string> = {
 
 function EventIndicator({ event }: { event: EcologicalEvent | null }) {
   const simulationTime = useEcosystemStore((s) => s.simulationTime);
+  const isRewinding = useEcosystemStore((s) => s.isRewinding);
+  const rewindTime = useEcosystemStore((s) => s.rewindTime);
 
   if (!event) return null;
-  const progress = Math.min(100, ((simulationTime - event.startTime) / event.duration) * 100);
+  const displayTime = isRewinding ? rewindTime : simulationTime;
+  const progress = Math.min(100, ((displayTime - event.startTime) / event.duration) * 100);
 
   return (
     <div
@@ -49,10 +52,12 @@ function EventIndicator({ event }: { event: EcologicalEvent | null }) {
 export function EcosystemStats() {
   const organisms = useEcosystemStore((s) => s.organisms);
   const simulationTime = useEcosystemStore((s) => s.simulationTime);
+  const isRewinding = useEcosystemStore((s) => s.isRewinding);
+  const rewindTime = useEcosystemStore((s) => s.rewindTime);
   const getStats = useEcosystemStore((s) => s.getStats);
   const activeEvent = useEcosystemStore((s) => s.activeEvent);
 
-  const stats = useMemo(() => getStats(), [organisms, simulationTime, getStats]);
+  const stats = useMemo(() => getStats(), [organisms, simulationTime, isRewinding, rewindTime, getStats]);
 
   const levelData = useMemo(() => {
     const levels: Record<TrophicLevel, number> = {
@@ -87,7 +92,7 @@ export function EcosystemStats() {
   };
 
   return (
-    <div className="absolute bottom-4 left-4 z-30">
+    <div className="absolute bottom-36 left-4 z-30">
       <GlassCard className="p-4 w-72">
         <h3 className="text-white font-bold text-lg mb-3 flex items-center gap-2">
           <span className="text-xl">📊</span> 生态数据

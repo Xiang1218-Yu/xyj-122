@@ -45,7 +45,7 @@ export function FoodWebPanel() {
   }, [presentSpecies]);
 
   return (
-    <div className="absolute bottom-4 right-4 z-30">
+    <div className="absolute bottom-36 right-4 z-30">
       <GlassCard className="p-4">
         <h3 className="text-white font-bold text-lg mb-3 flex items-center gap-2">
           <span className="text-xl">🔗</span> 食物链网络

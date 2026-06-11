@@ -202,24 +202,34 @@ function applyEventEffects(
 export function useEcosystemSimulation() {
   const frameRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(0);
+  const lastSnapshotTimeRef = useRef<number>(0);
   const isRunningRef = useRef<boolean>(true);
+  const isRewindingRef = useRef<boolean>(false);
 
   const batchUpdateOrganisms = useEcosystemStore((s) => s.batchUpdateOrganisms);
   const batchRemoveOrganisms = useEcosystemStore((s) => s.batchRemoveOrganisms);
   const addOrganism = useEcosystemStore((s) => s.addOrganism);
   const incrementTime = useEcosystemStore((s) => s.incrementTime);
   const isRunning = useEcosystemStore((s) => s.isRunning);
+  const isRewinding = useEcosystemStore((s) => s.isRewinding);
   const triggerEvent = useEcosystemStore((s) => s.triggerEvent);
   const clearEvent = useEcosystemStore((s) => s.clearEvent);
   const setWaterColor = useEcosystemStore((s) => s.setWaterColor);
+  const recordSnapshot = useEcosystemStore((s) => s.recordSnapshot);
+
+  const SNAPSHOT_INTERVAL = 5;
 
   useEffect(() => {
     isRunningRef.current = isRunning;
   }, [isRunning]);
 
   useEffect(() => {
+    isRewindingRef.current = isRewinding;
+  }, [isRewinding]);
+
+  useEffect(() => {
     const tick = (time: number) => {
-      if (isRunningRef.current && time - lastTimeRef.current > 60) {
+      if (!isRewindingRef.current && isRunningRef.current && time - lastTimeRef.current > 60) {
         lastTimeRef.current = time;
 
         const state = useEcosystemStore.getState();
@@ -284,6 +294,11 @@ export function useEcosystemSimulation() {
         });
 
         incrementTime();
+
+        if (currentTime - lastSnapshotTimeRef.current >= SNAPSHOT_INTERVAL) {
+          lastSnapshotTimeRef.current = currentTime;
+          recordSnapshot();
+        }
       }
 
       frameRef.current = requestAnimationFrame(tick);
@@ -296,5 +311,5 @@ export function useEcosystemSimulation() {
         cancelAnimationFrame(frameRef.current);
       }
     };
-  }, [batchUpdateOrganisms, batchRemoveOrganisms, addOrganism, incrementTime, triggerEvent, clearEvent, setWaterColor]);
+  }, [batchUpdateOrganisms, batchRemoveOrganisms, addOrganism, incrementTime, triggerEvent, clearEvent, setWaterColor, recordSnapshot]);
 }
