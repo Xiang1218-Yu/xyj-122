@@ -9,9 +9,16 @@ import type {
   HistorySnapshot,
   SerializedOrganism,
   SerializedVector3,
+  Challenge,
+  ChallengeProgress,
 } from '@/types/ecosystem';
 import { getSpeciesById, SPECIES } from '@/data/species';
 import { getPresetById } from '@/data/presets';
+import { CHALLENGES } from '@/data/challenges';
+import {
+  computeLongestFoodChain,
+  countTrophicLevels,
+} from '@/utils/ecosystemSimulator';
 
 const MAX_HISTORY_SNAPSHOTS = 1800;
 
@@ -101,6 +108,18 @@ interface EcosystemStore {
   seekToTime: (targetTime: number) => void;
   exitRewind: () => void;
   clearHistory: () => void;
+
+  challenges: Challenge[];
+  challengeProgress: Record<string, ChallengeProgress>;
+  showChallengePanel: boolean;
+  showBadgeCollection: boolean;
+  newlyCompletedChallenge: Challenge | null;
+
+  toggleChallengePanel: () => void;
+  toggleBadgeCollection: () => void;
+  checkChallenges: () => void;
+  clearNewlyCompletedChallenge: () => void;
+  resetChallengeProgress: () => void;
 }
 
 const AQUARIUM_BOUNDS = {
@@ -172,6 +191,19 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
   history: [],
   isRewinding: false,
   rewindTime: 0,
+
+  challenges: CHALLENGES,
+  challengeProgress: CHALLENGES.reduce((acc, challenge) => {
+    acc[challenge.id] = {
+      challengeId: challenge.id,
+      completed: false,
+      currentValue: 0,
+    };
+    return acc;
+  }, {} as Record<string, ChallengeProgress>),
+  showChallengePanel: false,
+  showBadgeCollection: false,
+  newlyCompletedChallenge: null,
 
   addOrganism: (speciesId, position) => {
     const state = get();
@@ -262,24 +294,36 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
   },
 
   resetEcosystem: () => {
-    set({
-      organisms: [],
-      selectedSpeciesId: null,
-      selectedOrganismId: null,
-      trackingOrganismId: null,
-      simulationTime: 0,
-      isRunning: true,
-      currentPresetId: null,
-      backgroundColors: ['#0A1628', '#0d1f3d', '#1E3A5F'] as [string, string, string],
-      waterColor: '#22D3EE',
-      ambientLightIntensity: 0.7,
-      waterTemperature: 24,
-      lightIntensity: 0.7,
-      activeEvent: null,
-      showTimeline: true,
-      history: [],
-      isRewinding: false,
-      rewindTime: 0,
+    set((prev) => {
+      const resetProgress = { ...prev.challengeProgress };
+      Object.keys(resetProgress).forEach((id) => {
+        resetProgress[id] = {
+          ...resetProgress[id],
+          currentValue: 0,
+        };
+      });
+
+      return {
+        organisms: [],
+        selectedSpeciesId: null,
+        selectedOrganismId: null,
+        trackingOrganismId: null,
+        simulationTime: 0,
+        isRunning: true,
+        currentPresetId: null,
+        backgroundColors: ['#0A1628', '#0d1f3d', '#1E3A5F'] as [string, string, string],
+        waterColor: '#22D3EE',
+        ambientLightIntensity: 0.7,
+        waterTemperature: 24,
+        lightIntensity: 0.7,
+        activeEvent: null,
+        showTimeline: true,
+        history: [],
+        isRewinding: false,
+        rewindTime: 0,
+        challengeProgress: resetProgress,
+        newlyCompletedChallenge: null,
+      };
     });
   },
 
@@ -500,6 +544,94 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
 
   clearHistory: () => {
     set({ history: [], isRewinding: false, rewindTime: 0 });
+  },
+
+  toggleChallengePanel: () => {
+    set((prev) => ({ showChallengePanel: !prev.showChallengePanel, showBadgeCollection: false }));
+  },
+
+  toggleBadgeCollection: () => {
+    set((prev) => ({ showBadgeCollection: !prev.showBadgeCollection, showChallengePanel: false }));
+  },
+
+  checkChallenges: () => {
+    const state = get();
+    if (state.isRewinding) return;
+
+    const stats = state.getStats();
+    const organisms = state.organisms;
+    const presentSpeciesCount = [...new Set(organisms.map((o) => o.speciesId))].length;
+    const longestChain = computeLongestFoodChain(organisms);
+    const trophicLevels = countTrophicLevels(organisms);
+
+    let newCompletedChallenge: Challenge | null = null;
+
+    const newProgress = { ...state.challengeProgress };
+
+    state.challenges.forEach((challenge) => {
+      if (newProgress[challenge.id]?.completed) return;
+
+      let currentValue = 0;
+      switch (challenge.type) {
+        case 'survival_time':
+          currentValue = Math.floor(stats.time);
+          break;
+        case 'species_diversity':
+          currentValue = presentSpeciesCount;
+          break;
+        case 'food_chain_length':
+          currentValue = longestChain;
+          break;
+        case 'total_population':
+          currentValue = stats.totalOrganisms;
+          break;
+        case 'balance_index':
+          currentValue = Math.floor(stats.balanceIndex);
+          break;
+        case 'trophic_level_complete':
+          currentValue = trophicLevels;
+          break;
+      }
+
+      const isCompleted = currentValue >= challenge.target;
+
+      if (isCompleted && !newProgress[challenge.id]?.completed) {
+        newCompletedChallenge = challenge;
+      }
+
+      newProgress[challenge.id] = {
+        ...newProgress[challenge.id],
+        challengeId: challenge.id,
+        currentValue,
+        completed: isCompleted,
+        completedAt: isCompleted && !newProgress[challenge.id]?.completed
+          ? Date.now()
+          : newProgress[challenge.id]?.completedAt,
+      };
+    });
+
+    set({
+      challengeProgress: newProgress,
+      newlyCompletedChallenge: newCompletedChallenge,
+    });
+  },
+
+  clearNewlyCompletedChallenge: () => {
+    set({ newlyCompletedChallenge: null });
+  },
+
+  resetChallengeProgress: () => {
+    set({
+      challengeProgress: CHALLENGES.reduce((acc, challenge) => {
+        acc[challenge.id] = {
+          challengeId: challenge.id,
+          completed: false,
+          currentValue: 0,
+        };
+        return acc;
+      }, {} as Record<string, ChallengeProgress>),
+      newlyCompletedChallenge: null,
+    });
   },
 }));
 

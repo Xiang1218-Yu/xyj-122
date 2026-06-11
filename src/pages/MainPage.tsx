@@ -9,6 +9,9 @@ import { ControlButtons } from '@/components/UI/ControlButtons';
 import { PresetSelector } from '@/components/UI/PresetSelector';
 import { Timeline } from '@/components/UI/Timeline';
 import { EnvironmentSliders } from '@/components/UI/EnvironmentSliders';
+import { ChallengePanel } from '@/components/UI/ChallengePanel';
+import { BadgeCollection } from '@/components/UI/BadgeCollection';
+import { ChallengeSuccessModal } from '@/components/UI/ChallengeSuccessModal';
 import { useEcosystemSimulation } from '@/hooks/useEcosystemSimulation';
 import { useEcosystemStore, AQUARIUM_BOUNDS } from '@/store/useEcosystemStore';
 import { GlassCard } from '@/components/common/GlassCard';
@@ -251,6 +254,9 @@ export function MainPage() {
       <SpeciesInfoCard />
       <Timeline />
       <EnvironmentSliders />
+      <ChallengePanel />
+      <BadgeCollection />
+      <ChallengeSuccessModal />
 
       {selectedSpeciesId && (
         <div className="absolute inset-0 pointer-events-none z-5">

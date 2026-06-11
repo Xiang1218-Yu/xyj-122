@@ -216,6 +216,7 @@ export function useEcosystemSimulation() {
   const clearEvent = useEcosystemStore((s) => s.clearEvent);
   const setWaterColor = useEcosystemStore((s) => s.setWaterColor);
   const recordSnapshot = useEcosystemStore((s) => s.recordSnapshot);
+  const checkChallenges = useEcosystemStore((s) => s.checkChallenges);
   const waterTemperature = useEcosystemStore((s) => s.waterTemperature);
   const lightIntensity = useEcosystemStore((s) => s.lightIntensity);
 
@@ -296,6 +297,7 @@ export function useEcosystemSimulation() {
         });
 
         incrementTime();
+        checkChallenges();
 
         if (currentTime - lastSnapshotTimeRef.current >= SNAPSHOT_INTERVAL) {
           lastSnapshotTimeRef.current = currentTime;
@@ -313,5 +315,5 @@ export function useEcosystemSimulation() {
         cancelAnimationFrame(frameRef.current);
       }
     };
-  }, [batchUpdateOrganisms, batchRemoveOrganisms, addOrganism, incrementTime, triggerEvent, clearEvent, setWaterColor, recordSnapshot, waterTemperature, lightIntensity]);
+  }, [batchUpdateOrganisms, batchRemoveOrganisms, addOrganism, incrementTime, triggerEvent, clearEvent, setWaterColor, recordSnapshot, checkChallenges, waterTemperature, lightIntensity]);
 }

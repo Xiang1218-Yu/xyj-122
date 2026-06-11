@@ -121,3 +121,55 @@ export interface PresetEcosystem {
   educationalInfo: string;
   expectedObservations: string[];
 }
+
+export type ChallengeType =
+  | 'survival_time'
+  | 'species_diversity'
+  | 'food_chain_length'
+  | 'total_population'
+  | 'balance_index'
+  | 'trophic_level_complete';
+
+export interface Challenge {
+  id: string;
+  name: string;
+  description: string;
+  type: ChallengeType;
+  target: number;
+  difficulty: 'easy' | 'medium' | 'hard';
+  badge: Badge;
+  hint?: string;
+}
+
+export interface Badge {
+  id: string;
+  name: string;
+  emoji: string;
+  description: string;
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  color: string;
+}
+
+export interface ChallengeProgress {
+  challengeId: string;
+  completed: boolean;
+  completedAt?: number;
+  currentValue: number;
+}
+
+export type ChallengeStoreState = {
+  challenges: Challenge[];
+  progress: Record<string, ChallengeProgress>;
+  completedBadges: string[];
+  showChallengePanel: boolean;
+  showBadgeCollection: boolean;
+  activeChallengeId: string | null;
+  newlyCompletedChallenge: Challenge | null;
+
+  toggleChallengePanel: () => void;
+  toggleBadgeCollection: () => void;
+  setActiveChallenge: (challengeId: string | null) => void;
+  checkChallenges: () => void;
+  clearNewlyCompleted: () => void;
+  resetChallengeProgress: () => void;
+};
