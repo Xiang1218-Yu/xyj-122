@@ -112,3 +112,46 @@ canvas {
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.3);
 }
+
+@keyframes edge-pulse {
+  0%, 100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-edge-pulse {
+  animation: edge-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes event-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-event-slide-in {
+  animation: event-slide-in 0.5s ease-out forwards;
+}
+
+@keyframes event-slide-out {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+.animate-event-slide-out {
+  animation: event-slide-out 0.5s ease-in forwards;
+}

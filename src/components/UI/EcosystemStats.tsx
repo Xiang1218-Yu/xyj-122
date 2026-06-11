@@ -2,12 +2,55 @@ import { useMemo } from 'react';
 import { GlassCard } from '@/components/common/GlassCard';
 import { useEcosystemStore } from '@/store/useEcosystemStore';
 import { SPECIES, TROPHIC_LEVEL_COLORS, TROPHIC_LEVEL_LABELS } from '@/data/species';
-import type { TrophicLevel } from '@/types/ecosystem';
+import type { TrophicLevel, EcologicalEvent } from '@/types/ecosystem';
+
+const EVENT_EMOJIS: Record<string, string> = {
+  red_tide: '🌊',
+  invasive_species: '🦑',
+  water_purification: '✨',
+};
+
+function EventIndicator({ event }: { event: EcologicalEvent | null }) {
+  if (!event) return null;
+
+  const simulationTime = useEcosystemStore((s) => s.simulationTime);
+  const progress = Math.min(100, ((simulationTime - event.startTime) / event.duration) * 100);
+
+  return (
+    <div
+      className="mb-4 p-3 rounded-lg"
+      style={{
+        backgroundColor: `${event.color}20`,
+        border: `1px solid ${event.color}66`,
+      }}
+    >
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-lg">{EVENT_EMOJIS[event.type] || '⚠️'}</span>
+        <span
+          className="font-bold text-sm"
+          style={{ color: event.color }}
+        >
+          {event.name}
+        </span>
+      </div>
+      <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all duration-300"
+          style={{
+            width: `${progress}%`,
+            backgroundColor: event.color,
+          }}
+        />
+      </div>
+    </div>
+  );
+}
 
 export function EcosystemStats() {
   const organisms = useEcosystemStore((s) => s.organisms);
   const simulationTime = useEcosystemStore((s) => s.simulationTime);
   const getStats = useEcosystemStore((s) => s.getStats);
+  const activeEvent = useEcosystemStore((s) => s.activeEvent);
 
   const stats = useMemo(() => getStats(), [organisms, simulationTime, getStats]);
 
@@ -15,6 +58,7 @@ export function EcosystemStats() {
     const levels: Record<TrophicLevel, number> = {
       producer: 0,
       herbivore: 0,
+      omnivore: 0,
       carnivore: 0,
       decomposer: 0,
     };
@@ -48,6 +92,8 @@ export function EcosystemStats() {
         <h3 className="text-white font-bold text-lg mb-3 flex items-center gap-2">
           <span className="text-xl">📊</span> 生态数据
         </h3>
+
+        <EventIndicator event={activeEvent} />
 
         <div className="grid grid-cols-2 gap-3 mb-4">
           <div className="bg-white/5 rounded-lg p-2">

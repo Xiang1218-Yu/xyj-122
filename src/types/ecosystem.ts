@@ -53,6 +53,19 @@ export interface PresetSpeciesConfig {
   count: number;
 }
 
+export type EcologicalEventType = 'red_tide' | 'invasive_species' | 'water_purification';
+
+export interface EcologicalEvent {
+  id: string;
+  type: EcologicalEventType;
+  name: string;
+  description: string;
+  color: string;
+  startTime: number;
+  duration: number;
+  intensity: number;
+}
+
 export interface PresetEcosystem {
   id: string;
   name: string;

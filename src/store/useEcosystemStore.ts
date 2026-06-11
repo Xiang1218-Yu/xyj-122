@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import * as THREE from 'three';
-import type { Organism, EcosystemStats, Species, PresetEcosystem } from '@/types/ecosystem';
+import type { Organism, EcosystemStats, Species, PresetEcosystem, EcologicalEvent } from '@/types/ecosystem';
 import { getSpeciesById, SPECIES } from '@/data/species';
 import { getPresetById } from '@/data/presets';
 
@@ -15,6 +15,7 @@ interface EcosystemStore {
   backgroundColors: [string, string, string];
   waterColor: string;
   ambientLightIntensity: number;
+  activeEvent: EcologicalEvent | null;
 
   addOrganism: (speciesId: string, position?: THREE.Vector3) => void;
   removeOrganism: (organismId: string) => void;
@@ -30,6 +31,9 @@ interface EcosystemStore {
   batchRemoveOrganisms: (ids: string[]) => void;
   loadPreset: (presetId: string) => void;
   getCurrentPreset: () => PresetEcosystem | undefined;
+  triggerEvent: (event: EcologicalEvent) => void;
+  clearEvent: () => void;
+  setWaterColor: (color: string) => void;
 }
 
 const AQUARIUM_BOUNDS = {
@@ -92,6 +96,7 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
   backgroundColors: ['#0A1628', '#0d1f3d', '#1E3A5F'] as [string, string, string],
   waterColor: '#22D3EE',
   ambientLightIntensity: 0.7,
+  activeEvent: null,
 
   addOrganism: (speciesId, position) => {
     const state = get();
@@ -168,6 +173,7 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
       backgroundColors: ['#0A1628', '#0d1f3d', '#1E3A5F'] as [string, string, string],
       waterColor: '#22D3EE',
       ambientLightIntensity: 0.7,
+      activeEvent: null,
     });
   },
 
@@ -203,6 +209,7 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
       backgroundColors: preset.backgroundColors,
       waterColor: preset.waterColor,
       ambientLightIntensity: preset.ambientLightIntensity,
+      activeEvent: null,
     });
 
     requestAnimationFrame(() => {
@@ -216,6 +223,18 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
   getCurrentPreset: () => {
     const state = get();
     return state.currentPresetId ? getPresetById(state.currentPresetId) : undefined;
+  },
+
+  triggerEvent: (event) => {
+    set({ activeEvent: event });
+  },
+
+  clearEvent: () => {
+    set({ activeEvent: null });
+  },
+
+  setWaterColor: (color) => {
+    set({ waterColor: color });
   },
 
   getStats: () => {
