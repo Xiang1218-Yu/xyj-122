@@ -88,11 +88,11 @@ export function simulateStep(
 ): {
   updates: { id: string; updates: Partial<Organism> }[];
   toRemove: string[];
-  toAdd: { speciesId: string; position: THREE.Vector3; ignoreMaxPopulation?: boolean }[];
+  toAdd: { speciesId: string; position: THREE.Vector3 }[];
 } {
   const updates: Map<string, Partial<Organism>> = new Map();
   const toRemove: Set<string> = new Set();
-  const toAdd: { speciesId: string; position: THREE.Vector3; ignoreMaxPopulation?: boolean }[] = [];
+  const toAdd: { speciesId: string; position: THREE.Vector3 }[] = [];
   const eatenPrey: Set<string> = new Set();
 
   for (const organism of organisms) {

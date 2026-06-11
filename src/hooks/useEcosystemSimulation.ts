@@ -108,12 +108,12 @@ function applyEventEffects(
 ): {
   updates: { id: string; updates: Partial<any> }[];
   toRemove: string[];
-  toAdd: { speciesId: string; position: THREE.Vector3; ignoreMaxPopulation?: boolean }[];
+  toAdd: { speciesId: string; position: THREE.Vector3 }[];
   waterColor?: string;
 } {
   const updates: { id: string; updates: Partial<any> }[] = [];
   const toRemove: string[] = [];
-  const toAdd: { speciesId: string; position: THREE.Vector3; ignoreMaxPopulation?: boolean }[] = [];
+  const toAdd: { speciesId: string; position: THREE.Vector3 }[] = [];
   let waterColor: string | undefined;
 
   const progress = (currentTime - event.startTime) / event.duration;
@@ -142,7 +142,7 @@ function applyEventEffects(
           AQUARIUM_BOUNDS.minY + 0.2 + Math.random() * 0.5,
           AQUARIUM_BOUNDS.minZ + Math.random() * (AQUARIUM_BOUNDS.maxZ - AQUARIUM_BOUNDS.minZ)
         );
-        toAdd.push({ speciesId: 'polluted_algae', position: pos, ignoreMaxPopulation: true });
+        toAdd.push({ speciesId: 'polluted_algae', position: pos });
       }
       break;
     }
@@ -164,7 +164,7 @@ function applyEventEffects(
           minY + Math.random() * (maxY - minY),
           AQUARIUM_BOUNDS.minZ + Math.random() * (AQUARIUM_BOUNDS.maxZ - AQUARIUM_BOUNDS.minZ)
         );
-        toAdd.push({ speciesId: invasiveId, position: pos, ignoreMaxPopulation: true });
+        toAdd.push({ speciesId: invasiveId, position: pos });
       }
 
       state.organisms.forEach((org) => {
@@ -279,8 +279,8 @@ export function useEcosystemSimulation() {
         if (toRemove.length > 0) {
           batchRemoveOrganisms(toRemove);
         }
-        toAdd.forEach(({ speciesId, position, ignoreMaxPopulation }) => {
-          addOrganism(speciesId, position, ignoreMaxPopulation);
+        toAdd.forEach(({ speciesId, position }) => {
+          addOrganism(speciesId, position);
         });
 
         incrementTime();
