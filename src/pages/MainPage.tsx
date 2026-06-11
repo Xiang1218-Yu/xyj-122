@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import { Aquarium3D } from '@/components/Aquarium3D/Aquarium';
 import { SpeciesToolbar } from '@/components/UI/SpeciesToolbar';
@@ -16,7 +16,12 @@ export function MainPage() {
   const selectedSpeciesId = useEcosystemStore((s) => s.selectedSpeciesId);
   const addOrganism = useEcosystemStore((s) => s.addOrganism);
   const setSelectedSpecies = useEcosystemStore((s) => s.setSelectedSpecies);
-  const backgroundGradient = useEcosystemStore((s) => s.backgroundGradient);
+  const backgroundColors = useEcosystemStore((s) => s.backgroundColors);
+
+  const backgroundStyle = useMemo(() => ({
+    background: `linear-gradient(to bottom, ${backgroundColors[0]}, ${backgroundColors[1]}, ${backgroundColors[2]})`,
+    transition: 'background 1.5s ease-in-out',
+  }), [backgroundColors]);
 
   useEffect(() => {
     const canvas = document.querySelector('canvas');
@@ -44,7 +49,7 @@ export function MainPage() {
   };
 
   return (
-    <div className={`relative w-full h-screen overflow-hidden bg-gradient-to-b ${backgroundGradient} transition-all duration-1000`}>
+    <div className="relative w-full h-screen overflow-hidden" style={backgroundStyle}>
       <div className="absolute inset-0 opacity-30">
         <div
           className="absolute inset-0"

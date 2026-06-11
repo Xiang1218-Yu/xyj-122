@@ -1,5 +1,5 @@
-import { useRef, useMemo, useState } from 'react';
-import { Canvas, useFrame, ThreeEvent } from '@react-three/fiber';
+import { useRef, useMemo, useState, useEffect } from 'react';
+import { Canvas, useFrame, useThree, ThreeEvent } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
@@ -83,11 +83,13 @@ function Glass() {
 
 function Water() {
   const waterRef = useRef<THREE.Mesh>(null);
+  const waterColor = useEcosystemStore((s) => s.waterColor);
 
   useFrame((state) => {
     if (waterRef.current) {
       const material = waterRef.current.material as THREE.MeshPhysicalMaterial;
       material.opacity = 0.35 + Math.sin(state.clock.elapsedTime * 0.5) * 0.02;
+      material.color.lerp(new THREE.Color(waterColor), 0.05);
     }
   });
 
@@ -99,7 +101,7 @@ function Water() {
     <mesh ref={waterRef} position={[0, 0, 0]}>
       <boxGeometry args={[width, height, depth]} />
       <meshPhysicalMaterial
-        color="#0ea5e9"
+        color={waterColor}
         transparent
         opacity={0.35}
         roughness={0}
@@ -285,6 +287,60 @@ interface Aquarium3DProps {
   onAquariumClick: (point: THREE.Vector3) => void;
 }
 
+function SceneEnvironment() {
+  const { scene } = useThree();
+  const waterColor = useEcosystemStore((s) => s.waterColor);
+  const ambientLightIntensity = useEcosystemStore((s) => s.ambientLightIntensity);
+
+  const ambientRef = useRef<THREE.AmbientLight>(null);
+  const dirLightRef = useRef<THREE.DirectionalLight>(null);
+  const bgColorRef = useRef(new THREE.Color(0x0a1628));
+
+  useEffect(() => {
+    bgColorRef.current = new THREE.Color(waterColor).multiplyScalar(0.15);
+    if (scene.background instanceof THREE.Color) {
+      scene.background = bgColorRef.current.clone();
+    }
+  }, [waterColor, scene]);
+
+  useEffect(() => {
+    if (scene.fog instanceof THREE.Fog) {
+      scene.fog.color.copy(bgColorRef.current);
+    }
+  }, [waterColor, scene]);
+
+  useFrame(() => {
+    if (scene.background instanceof THREE.Color) {
+      scene.background.lerp(bgColorRef.current, 0.03);
+    }
+    if (scene.fog instanceof THREE.Fog) {
+      scene.fog.color.lerp(bgColorRef.current, 0.03);
+    }
+    if (ambientRef.current) {
+      const targetIntensity = ambientLightIntensity * 0.5;
+      ambientRef.current.intensity += (targetIntensity - ambientRef.current.intensity) * 0.03;
+    }
+    if (dirLightRef.current) {
+      const targetIntensity = ambientLightIntensity * 1.5;
+      dirLightRef.current.intensity += (targetIntensity - dirLightRef.current.intensity) * 0.03;
+    }
+  });
+
+  return (
+    <>
+      <ambientLight ref={ambientRef} intensity={0.4} />
+      <directionalLight
+        ref={dirLightRef}
+        position={[2, 5, 3]}
+        intensity={1.2}
+        castShadow
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={1024}
+      />
+    </>
+  );
+}
+
 export function Aquarium3D({ onAquariumClick }: Aquarium3DProps) {
   const { organisms } = useEcosystemStore();
   const selectedSpeciesId = useEcosystemStore((s) => s.selectedSpeciesId);
@@ -299,14 +355,7 @@ export function Aquarium3D({ onAquariumClick }: Aquarium3DProps) {
       <color attach="background" args={[0x0a1628]} />
       <fog attach="fog" args={[0x0a1628, 10, 20]} />
 
-      <ambientLight intensity={0.4} />
-      <directionalLight
-        position={[2, 5, 3]}
-        intensity={1.2}
-        castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
-      />
+      <SceneEnvironment />
       <pointLight position={[0, 3, 0]} intensity={0.6} color="#a5f3fc" distance={10} />
       <pointLight position={[-3, 1, -2]} intensity={0.3} color="#60a5fa" distance={8} />
 

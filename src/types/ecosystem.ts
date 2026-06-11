@@ -60,7 +60,7 @@ export interface PresetEcosystem {
   description: string;
   difficulty: 'easy' | 'medium' | 'hard';
   category: 'freshwater' | 'rainforest' | 'polluted' | 'marine' | 'custom';
-  backgroundGradient: string;
+  backgroundColors: [string, string, string];
   waterColor: string;
   ambientLightIntensity: number;
   species: PresetSpeciesConfig[];

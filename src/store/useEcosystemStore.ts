@@ -12,7 +12,7 @@ interface EcosystemStore {
   simulationTime: number;
   showLabels: boolean;
   currentPresetId: string | null;
-  backgroundGradient: string;
+  backgroundColors: [string, string, string];
   waterColor: string;
   ambientLightIntensity: number;
 
@@ -89,7 +89,7 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
   simulationTime: 0,
   showLabels: true,
   currentPresetId: null,
-  backgroundGradient: 'from-[#0A1628] via-[#0d1f3d] to-[#1E3A5F]',
+  backgroundColors: ['#0A1628', '#0d1f3d', '#1E3A5F'] as [string, string, string],
   waterColor: '#22D3EE',
   ambientLightIntensity: 0.7,
 
@@ -165,7 +165,7 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
       simulationTime: 0,
       isRunning: true,
       currentPresetId: null,
-      backgroundGradient: 'from-[#0A1628] via-[#0d1f3d] to-[#1E3A5F]',
+      backgroundColors: ['#0A1628', '#0d1f3d', '#1E3A5F'] as [string, string, string],
       waterColor: '#22D3EE',
       ambientLightIntensity: 0.7,
     });
@@ -194,15 +194,22 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
     });
 
     set({
-      organisms: newOrganisms,
+      organisms: [],
       selectedSpeciesId: null,
       selectedOrganismId: null,
       simulationTime: 0,
-      isRunning: true,
+      isRunning: false,
       currentPresetId: presetId,
-      backgroundGradient: preset.backgroundGradient,
+      backgroundColors: preset.backgroundColors,
       waterColor: preset.waterColor,
       ambientLightIntensity: preset.ambientLightIntensity,
+    });
+
+    requestAnimationFrame(() => {
+      set({
+        organisms: newOrganisms,
+        isRunning: true,
+      });
     });
   },
 
