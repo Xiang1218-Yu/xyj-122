@@ -1,7 +1,12 @@
+import { useMemo } from 'react';
 import { CollapsibleDraggablePanel } from '@/components/common/CollapsibleDraggablePanel';
+import { ProgressBar } from '@/components/UI/ProgressBar';
+import { HistogramChart } from '@/components/UI/HistogramChart';
+import { StatusDistribution } from '@/components/UI/StatusDistribution';
 import { useEcosystemStore } from '@/store/useEcosystemStore';
 import { getSpeciesById, TROPHIC_LEVEL_COLORS, TROPHIC_LEVEL_LABELS } from '@/data/species';
-import { Trash2, Crosshair, Eye, EyeOff } from 'lucide-react';
+import type { OrganismState } from '@/types/ecosystem';
+import { Trash2, Crosshair, Eye, EyeOff, Users } from 'lucide-react';
 
 export function SpeciesInfoCard() {
   const selectedOrganismId = useEcosystemStore((s) => s.selectedOrganismId);
@@ -19,6 +24,53 @@ export function SpeciesInfoCard() {
 
   const energyPercent = (organism.energy / (species.energyValue * 1.5)) * 100;
   const agePercent = (organism.age / species.lifespan) * 100;
+
+  const sameSpeciesOrganisms = useMemo(() => {
+    return organisms.filter((o) => o.speciesId === organism.speciesId);
+  }, [organisms, organism.speciesId]);
+
+  const { avgEnergy, avgAge, energyHistogram, statusDistribution } = useMemo(() => {
+    const count = sameSpeciesOrganisms.length;
+    const totalEnergy = sameSpeciesOrganisms.reduce((sum, o) => sum + o.energy, 0);
+    const totalAge = sameSpeciesOrganisms.reduce((sum, o) => sum + o.age, 0);
+    const avgE = count > 0 ? totalEnergy / count : 0;
+    const avgA = count > 0 ? totalAge / count : 0;
+
+    const binCount = 10;
+    const maxEnergy = species.energyValue * 1.5;
+    const bins = new Array(binCount).fill(0);
+    sameSpeciesOrganisms.forEach((o) => {
+      const binIndex = Math.min(binCount - 1, Math.floor((o.energy / maxEnergy) * binCount));
+      bins[Math.max(0, binIndex)]++;
+    });
+
+    const histogramBins = bins.map((value, i) => ({
+      value,
+      label: i % 3 === 0 ? `${Math.round((i / binCount) * 100)}%` : '',
+    }));
+
+    const statusDist: Record<OrganismState, number> = {
+      idle: 0,
+      wandering: 0,
+      hunting: 0,
+      fleeing: 0,
+      eating: 0,
+      reproducing: 0,
+      sleeping: 0,
+    };
+    sameSpeciesOrganisms.forEach((o) => {
+      if (o.state in statusDist) {
+        statusDist[o.state]++;
+      }
+    });
+
+    return {
+      avgEnergy: avgE,
+      avgAge: avgA,
+      energyHistogram: histogramBins,
+      statusDistribution: statusDist,
+    };
+  }, [sameSpeciesOrganisms, species.energyValue]);
 
   const getStateLabel = (state: string) => {
     const labels: Record<string, string> = {
@@ -149,6 +201,52 @@ export function SpeciesInfoCard() {
           <span className="text-white/60 text-xs">当前状态</span>
           <span className="text-white font-medium text-sm">{getStateLabel(organism.state)}</span>
         </div>
+      </div>
+
+      <div className="border-t border-white/10 pt-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Users size={14} className="text-white/50" />
+          <span className="text-white/70 text-xs font-medium">
+            种群状态 <span className="text-white/40">(共 {sameSpeciesOrganisms.length} 只)</span>
+          </span>
+        </div>
+
+        <div className="space-y-2.5 mb-4">
+          <ProgressBar
+            label="平均能量"
+            value={avgEnergy}
+            max={species.energyValue * 1.5}
+            color="#FBBF24"
+            size="sm"
+            showValue={false}
+          />
+          <ProgressBar
+            label="平均年龄"
+            value={avgAge}
+            max={species.lifespan}
+            color="#22D3EE"
+            size="sm"
+            showValue={false}
+          />
+        </div>
+
+        <div className="mb-4">
+          <div className="text-white/50 text-xs mb-1.5">能量分布</div>
+          <div className="bg-white/[0.03] rounded-lg p-2 border border-white/5">
+            <HistogramChart
+              bins={energyHistogram}
+              color={species.color}
+              height={80}
+              showValues={false}
+            />
+          </div>
+        </div>
+
+        <StatusDistribution
+          data={statusDistribution}
+          title="状态分布"
+          className="bg-white/[0.03] rounded-lg p-2.5 border border-white/5"
+        />
       </div>
 
       <div className="border-t border-white/10 pt-4 space-y-2">
