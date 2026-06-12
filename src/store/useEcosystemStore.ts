@@ -11,10 +11,12 @@ import type {
   SerializedVector3,
   Challenge,
   ChallengeProgress,
+  TeachingTip,
 } from '@/types/ecosystem';
 import { getSpeciesById, SPECIES } from '@/data/species';
 import { getPresetById } from '@/data/presets';
 import { CHALLENGES } from '@/data/challenges';
+import { getTipByTrigger } from '@/data/teachingTips';
 import {
   computeLongestFoodChain,
   countTrophicLevels,
@@ -121,6 +123,11 @@ interface EcosystemStore {
   checkChallenges: () => void;
   clearNewlyCompletedChallenge: () => void;
   resetChallengeProgress: () => void;
+
+  seenTips: Set<string>;
+  activeTip: TeachingTip | null;
+  showTeachingTip: (trigger: string) => void;
+  dismissTeachingTip: () => void;
 }
 
 const AQUARIUM_BOUNDS = {
@@ -207,6 +214,9 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
   showBadgeCollection: false,
   newlyCompletedChallenge: null,
 
+  seenTips: new Set<string>(),
+  activeTip: null,
+
   addOrganism: (speciesId, position) => {
     const state = get();
     if (state.isRewinding) return;
@@ -219,6 +229,44 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
     const organism = createOrganism(speciesId, position);
     if (organism) {
       set((prev) => ({ organisms: [...prev.organisms, organism] }));
+
+      const next = get();
+      const triggers: string[] = [];
+
+      if (!next.seenTips.has('first_organism_added')) {
+        triggers.push('first_organism_added');
+      }
+
+      const trophicTriggerMap: Record<string, string> = {
+        producer: 'first_producer_added',
+        herbivore: 'first_herbivore_added',
+        carnivore: 'first_carnivore_added',
+        decomposer: 'first_decomposer_added',
+        omnivore: 'first_herbivore_added',
+      };
+      const levelTrigger = trophicTriggerMap[species.trophicLevel];
+      if (levelTrigger && !next.seenTips.has(levelTrigger)) {
+        triggers.push(levelTrigger);
+      }
+
+      const presentLevels = new Set(
+        next.organisms.map((o) => getSpeciesById(o.speciesId)?.trophicLevel).filter(Boolean)
+      );
+      if (
+        presentLevels.has('producer') &&
+        (presentLevels.has('herbivore') || presentLevels.has('omnivore')) &&
+        (presentLevels.has('carnivore') || presentLevels.has('decomposer')) &&
+        !next.seenTips.has('food_chain_formed')
+      ) {
+        triggers.push('food_chain_formed');
+      }
+
+      for (const trigger of triggers) {
+        if (!next.seenTips.has(trigger) && !next.activeTip) {
+          next.showTeachingTip(trigger);
+          break;
+        }
+      }
     }
   },
 
@@ -410,6 +458,9 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
         organisms: newOrganisms,
         isRunning: true,
       });
+
+      const next = get();
+      next.showTeachingTip('first_preset_loaded');
     });
   },
 
@@ -420,6 +471,21 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
 
   triggerEvent: (event) => {
     set({ activeEvent: event });
+
+    const state = get();
+    state.showTeachingTip('first_event_occurred');
+
+    const eventTriggerMap: Record<string, string> = {
+      red_tide: 'first_red_tide',
+      invasive_species: 'first_invasive_species',
+      water_purification: 'first_water_purification',
+    };
+    const specificTrigger = eventTriggerMap[event.type];
+    if (specificTrigger) {
+      setTimeout(() => {
+        get().showTeachingTip(specificTrigger);
+      }, 3000);
+    }
   },
 
   clearEvent: () => {
@@ -432,10 +498,12 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
 
   setWaterTemperature: (temp) => {
     set({ waterTemperature: temp });
+    get().showTeachingTip('first_temperature_change');
   },
 
   setLightIntensity: (intensity) => {
     set({ lightIntensity: intensity, ambientLightIntensity: intensity });
+    get().showTeachingTip('first_light_change');
   },
 
   toggleTimeline: () => {
@@ -673,6 +741,23 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
       }, {} as Record<string, ChallengeProgress>),
       newlyCompletedChallenge: null,
     });
+  },
+
+  showTeachingTip: (trigger: string) => {
+    const state = get();
+    if (state.seenTips.has(trigger)) return;
+    if (state.activeTip) return;
+
+    const tip = getTipByTrigger(trigger);
+    if (!tip) return;
+
+    const newSeenTips = new Set(state.seenTips);
+    newSeenTips.add(trigger);
+    set({ seenTips: newSeenTips, activeTip: tip });
+  },
+
+  dismissTeachingTip: () => {
+    set({ activeTip: null });
   },
 }));
 

@@ -12,6 +12,7 @@ import { EnvironmentSliders } from '@/components/UI/EnvironmentSliders';
 import { ChallengePanel } from '@/components/UI/ChallengePanel';
 import { BadgeCollection } from '@/components/UI/BadgeCollection';
 import { ChallengeSuccessModal } from '@/components/UI/ChallengeSuccessModal';
+import { TeachingTipCard } from '@/components/UI/TeachingTipCard';
 import { useEcosystemSimulation } from '@/hooks/useEcosystemSimulation';
 import { useEcosystemStore, AQUARIUM_BOUNDS } from '@/store/useEcosystemStore';
 import { GlassCard } from '@/components/common/GlassCard';
@@ -257,6 +258,7 @@ export function MainPage() {
       <ChallengePanel />
       <BadgeCollection />
       <ChallengeSuccessModal />
+      <TeachingTipCard />
 
       {selectedSpeciesId && (
         <div className="absolute inset-0 pointer-events-none z-5">

@@ -292,12 +292,40 @@ export function useEcosystemSimulation() {
         if (toRemove.length > 0) {
           batchRemoveOrganisms(toRemove);
         }
+
+        if (toAdd.length > 0 && !state.seenTips.has('first_reproduction')) {
+          state.showTeachingTip('first_reproduction');
+        }
+
+        if (toRemove.length > 0) {
+          const afterRemoveSpecies = new Set(
+            organisms
+              .filter((o) => !toRemove.includes(o.id))
+              .map((o) => o.speciesId),
+          );
+          const beforeSpecies = new Set(organisms.map((o) => o.speciesId));
+          const extinctSpecies = [...beforeSpecies].filter(
+            (id) => !afterRemoveSpecies.has(id),
+          );
+          if (extinctSpecies.length > 0 && !state.seenTips.has('first_species_extinction')) {
+            state.showTeachingTip('first_species_extinction');
+          }
+        }
+
         toAdd.forEach(({ speciesId, position }) => {
           addOrganism(speciesId, position);
         });
 
         incrementTime();
         checkChallenges();
+
+        const afterState = useEcosystemStore.getState();
+        if (
+          afterState.getStats().balanceIndex >= 60 &&
+          !afterState.seenTips.has('first_balance_achieved')
+        ) {
+          afterState.showTeachingTip('first_balance_achieved');
+        }
 
         if (currentTime - lastSnapshotTimeRef.current >= SNAPSHOT_INTERVAL) {
           lastSnapshotTimeRef.current = currentTime;

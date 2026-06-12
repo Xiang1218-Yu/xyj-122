@@ -174,3 +174,12 @@ export type ChallengeStoreState = {
   clearNewlyCompleted: () => void;
   resetChallengeProgress: () => void;
 };
+
+export interface TeachingTip {
+  id: string;
+  trigger: string;
+  title: string;
+  emoji: string;
+  content: string;
+  color: string;
+}
