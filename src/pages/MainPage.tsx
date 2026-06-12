@@ -11,6 +11,7 @@ import { Timeline } from '@/components/UI/Timeline';
 import { EnvironmentSliders } from '@/components/UI/EnvironmentSliders';
 import { ChallengePanel } from '@/components/UI/ChallengePanel';
 import { BadgeCollection } from '@/components/UI/BadgeCollection';
+import { PopulationTrendChart } from '@/components/UI/PopulationTrendChart';
 import { ChallengeSuccessModal } from '@/components/UI/ChallengeSuccessModal';
 import { TeachingTipCard } from '@/components/UI/TeachingTipCard';
 import { useEcosystemSimulation } from '@/hooks/useEcosystemSimulation';
@@ -251,6 +252,7 @@ export function MainPage() {
       <PresetSelector />
       <SpeciesToolbar />
       <EcosystemStats />
+      <PopulationTrendChart />
       <FoodWebPanel />
       <SpeciesInfoCard />
       <Timeline />
