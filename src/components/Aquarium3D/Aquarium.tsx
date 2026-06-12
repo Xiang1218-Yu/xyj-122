@@ -85,12 +85,21 @@ function Glass() {
 function Water() {
   const waterRef = useRef<THREE.Mesh>(null);
   const waterColor = useEcosystemStore((s) => s.waterColor);
+  const dayNightCycle = useEcosystemStore((s) => s.dayNightCycle);
+  const enableDayNightCycle = useEcosystemStore((s) => s.enableDayNightCycle);
 
   useFrame((state) => {
     if (waterRef.current) {
       const material = waterRef.current.material as THREE.MeshPhysicalMaterial;
       material.opacity = 0.35 + Math.sin(state.clock.elapsedTime * 0.5) * 0.02;
-      material.color.lerp(new THREE.Color(waterColor), 0.05);
+
+      let targetColor = new THREE.Color(waterColor);
+      if (enableDayNightCycle) {
+        const nightTint = new THREE.Color('#0a1628');
+        const tintFactor = 1.0 - dayNightCycle.lightFactor;
+        targetColor.lerp(nightTint, tintFactor * 0.6);
+      }
+      material.color.lerp(targetColor, 0.05);
     }
   });
 
@@ -163,10 +172,20 @@ function Substrate() {
 
 function LightRays() {
   const raysRef = useRef<THREE.Group>(null);
+  const dayNightCycle = useEcosystemStore((s) => s.dayNightCycle);
+  const enableDayNightCycle = useEcosystemStore((s) => s.enableDayNightCycle);
 
   useFrame((state) => {
     if (raysRef.current) {
       raysRef.current.rotation.y = state.clock.elapsedTime * 0.02;
+      const lightFactor = enableDayNightCycle ? dayNightCycle.lightFactor : 1.0;
+      raysRef.current.children.forEach((child) => {
+        const mesh = child as THREE.Mesh;
+        if (mesh.material) {
+          const mat = mesh.material as THREE.MeshBasicMaterial;
+          mat.opacity = 0.06 * lightFactor;
+        }
+      });
     }
   });
 
@@ -324,42 +343,105 @@ function TrackingCameraController({ controlsRef }: { controlsRef: React.RefObjec
   return null;
 }
 
+function DynamicPointLights() {
+  const light1Ref = useRef<THREE.PointLight>(null);
+  const light2Ref = useRef<THREE.PointLight>(null);
+  const dayNightCycle = useEcosystemStore((s) => s.dayNightCycle);
+  const enableDayNightCycle = useEcosystemStore((s) => s.enableDayNightCycle);
+
+  useFrame(() => {
+    const lightFactor = enableDayNightCycle ? dayNightCycle.lightFactor : 1.0;
+    if (light1Ref.current) {
+      light1Ref.current.intensity = 0.6 * lightFactor;
+    }
+    if (light2Ref.current) {
+      light2Ref.current.intensity = 0.3 * lightFactor;
+    }
+  });
+
+  return (
+    <>
+      <pointLight ref={light1Ref} position={[0, 3, 0]} intensity={0.6} color="#a5f3fc" distance={10} />
+      <pointLight ref={light2Ref} position={[-3, 1, -2]} intensity={0.3} color="#60a5fa" distance={8} />
+    </>
+  );
+}
+
 function SceneEnvironment() {
   const { scene } = useThree();
   const waterColor = useEcosystemStore((s) => s.waterColor);
   const ambientLightIntensity = useEcosystemStore((s) => s.ambientLightIntensity);
+  const dayNightCycle = useEcosystemStore((s) => s.dayNightCycle);
+  const enableDayNightCycle = useEcosystemStore((s) => s.enableDayNightCycle);
 
   const ambientRef = useRef<THREE.AmbientLight>(null);
   const dirLightRef = useRef<THREE.DirectionalLight>(null);
+  const moonLightRef = useRef<THREE.PointLight>(null);
   const bgColorRef = useRef(new THREE.Color(0x0a1628));
 
   useEffect(() => {
-    bgColorRef.current = new THREE.Color(waterColor).multiplyScalar(0.15);
+    if (enableDayNightCycle) {
+      const dayBg = new THREE.Color(waterColor).multiplyScalar(0.15);
+      const nightBg = new THREE.Color('#050a14');
+      const duskBg = new THREE.Color('#1a0f1e');
+      const dawnBg = new THREE.Color('#1a1510');
+
+      let targetColor;
+      switch (dayNightCycle.dayPhase) {
+        case 'dawn':
+          targetColor = dawnBg;
+          break;
+        case 'day':
+          targetColor = dayBg;
+          break;
+        case 'dusk':
+          targetColor = duskBg;
+          break;
+        case 'night':
+        default:
+          targetColor = nightBg;
+      }
+      bgColorRef.current = targetColor;
+    } else {
+      bgColorRef.current = new THREE.Color(waterColor).multiplyScalar(0.15);
+    }
     if (scene.background instanceof THREE.Color) {
       scene.background = bgColorRef.current.clone();
     }
-  }, [waterColor, scene]);
+  }, [waterColor, scene, dayNightCycle.dayPhase, enableDayNightCycle]);
 
   useEffect(() => {
     if (scene.fog instanceof THREE.Fog) {
       scene.fog.color.copy(bgColorRef.current);
     }
-  }, [waterColor, scene]);
+  }, [waterColor, scene, dayNightCycle.dayPhase, enableDayNightCycle]);
 
-  useFrame(() => {
+  useFrame((state) => {
     if (scene.background instanceof THREE.Color) {
       scene.background.lerp(bgColorRef.current, 0.03);
     }
     if (scene.fog instanceof THREE.Fog) {
       scene.fog.color.lerp(bgColorRef.current, 0.03);
     }
+
+    const cycleLightFactor = enableDayNightCycle ? dayNightCycle.lightFactor : 1.0;
+
     if (ambientRef.current) {
-      const targetIntensity = ambientLightIntensity * 0.5;
+      const targetIntensity = ambientLightIntensity * 0.5 * cycleLightFactor;
       ambientRef.current.intensity += (targetIntensity - ambientRef.current.intensity) * 0.03;
     }
     if (dirLightRef.current) {
-      const targetIntensity = ambientLightIntensity * 1.5;
+      const targetIntensity = ambientLightIntensity * 1.5 * cycleLightFactor;
       dirLightRef.current.intensity += (targetIntensity - dirLightRef.current.intensity) * 0.03;
+      const lightAngle = enableDayNightCycle ? dayNightCycle.timeOfDay * Math.PI * 2 - Math.PI / 2 : 0.5;
+      dirLightRef.current.position.x = Math.cos(lightAngle) * 5;
+      dirLightRef.current.position.y = Math.max(1, Math.sin(lightAngle) * 5 + 2);
+    }
+    if (moonLightRef.current) {
+      const moonFactor = enableDayNightCycle ? (1.0 - dayNightCycle.lightFactor) : 0;
+      const targetIntensity = 0.8 * moonFactor;
+      moonLightRef.current.intensity += (targetIntensity - moonLightRef.current.intensity) * 0.03;
+      moonLightRef.current.position.y = 3 + Math.sin(state.clock.elapsedTime * 0.1) * 0.3;
     }
   });
 
@@ -373,6 +455,13 @@ function SceneEnvironment() {
         castShadow
         shadow-mapSize-width={1024}
         shadow-mapSize-height={1024}
+      />
+      <pointLight
+        ref={moonLightRef}
+        position={[-3, 4, -2]}
+        intensity={0}
+        color="#93c5fd"
+        distance={15}
       />
     </>
   );
@@ -393,8 +482,7 @@ export function Aquarium3D({ onAquariumClick }: Aquarium3DProps) {
       <fog attach="fog" args={[0x0a1628, 10, 20]} />
 
       <SceneEnvironment />
-      <pointLight position={[0, 3, 0]} intensity={0.6} color="#a5f3fc" distance={10} />
-      <pointLight position={[-3, 1, -2]} intensity={0.3} color="#60a5fa" distance={8} />
+      <DynamicPointLights />
 
       <Water />
       <Glass />

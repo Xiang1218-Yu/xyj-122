@@ -31,7 +31,17 @@ export interface HistorySnapshot {
   waterColor: string;
 }
 
-export type OrganismState = 'idle' | 'wandering' | 'hunting' | 'fleeing' | 'eating' | 'reproducing';
+export type OrganismState = 'idle' | 'wandering' | 'hunting' | 'fleeing' | 'eating' | 'reproducing' | 'sleeping';
+
+export type DayPhase = 'dawn' | 'day' | 'dusk' | 'night';
+
+export interface DayNightCycle {
+  timeOfDay: number;
+  dayPhase: DayPhase;
+  isDaytime: boolean;
+  lightFactor: number;
+  cycleLength: number;
+}
 
 export interface EnvironmentalPreferences {
   optimalTemperature: number;
@@ -59,6 +69,9 @@ export interface Species {
   energyValue: number;
   maxPopulation: number;
   environmentalPrefs: EnvironmentalPreferences;
+  isBioluminescent?: boolean;
+  bioluminescentColor?: string;
+  isNocturnal?: boolean;
 }
 
 export interface Organism {

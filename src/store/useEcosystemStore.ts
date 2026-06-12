@@ -12,6 +12,8 @@ import type {
   Challenge,
   ChallengeProgress,
   TeachingTip,
+  DayNightCycle,
+  DayPhase,
 } from '@/types/ecosystem';
 import { getSpeciesById, SPECIES } from '@/data/species';
 import { getPresetById } from '@/data/presets';
@@ -79,6 +81,8 @@ interface EcosystemStore {
   lightIntensity: number;
   activeEvent: EcologicalEvent | null;
   showTimeline: boolean;
+  dayNightCycle: DayNightCycle;
+  enableDayNightCycle: boolean;
 
   history: HistorySnapshot[];
   isRewinding: boolean;
@@ -106,6 +110,9 @@ interface EcosystemStore {
   setWaterTemperature: (temp: number) => void;
   setLightIntensity: (intensity: number) => void;
   toggleTimeline: () => void;
+  updateDayNightCycle: () => void;
+  setDayNightCycleEnabled: (enabled: boolean) => void;
+  toggleDayNightCycle: () => void;
 
   recordSnapshot: () => void;
   seekToTime: (targetTime: number) => void;
@@ -141,6 +148,31 @@ const AQUARIUM_BOUNDS = {
 
 function generateId(): string {
   return Math.random().toString(36).substring(2, 11);
+}
+
+function calculateDayPhase(timeOfDay: number): DayPhase {
+  if (timeOfDay >= 0.2 && timeOfDay < 0.3) return 'dawn';
+  if (timeOfDay >= 0.3 && timeOfDay < 0.7) return 'day';
+  if (timeOfDay >= 0.7 && timeOfDay < 0.8) return 'dusk';
+  return 'night';
+}
+
+function calculateLightFactor(dayPhase: DayPhase, timeOfDay: number): number {
+  switch (dayPhase) {
+    case 'dawn': {
+      const t = (timeOfDay - 0.2) / 0.1;
+      return 0.2 + t * 0.8;
+    }
+    case 'day':
+      return 1.0;
+    case 'dusk': {
+      const t = (timeOfDay - 0.7) / 0.1;
+      return 1.0 - t * 0.8;
+    }
+    case 'night':
+    default:
+      return 0.2;
+  }
 }
 
 function randomPosition(species: Species): THREE.Vector3 {
@@ -196,6 +228,14 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
   lightIntensity: 0.7,
   activeEvent: null,
   showTimeline: true,
+  dayNightCycle: {
+    timeOfDay: 0.25,
+    dayPhase: 'day',
+    isDaytime: true,
+    lightFactor: 1.0,
+    cycleLength: 600,
+  },
+  enableDayNightCycle: true,
 
   history: [],
   isRewinding: false,
@@ -401,6 +441,14 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
         lightIntensity: 0.7,
         activeEvent: null,
         showTimeline: true,
+        dayNightCycle: {
+          timeOfDay: 0.25,
+          dayPhase: 'day',
+          isDaytime: true,
+          lightFactor: 1.0,
+          cycleLength: 600,
+        },
+        enableDayNightCycle: true,
         history: [],
         isRewinding: false,
         rewindTime: 0,
@@ -448,6 +496,14 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
       lightIntensity: preset.lightIntensity,
       activeEvent: null,
       showTimeline: true,
+      dayNightCycle: {
+        timeOfDay: 0.25,
+        dayPhase: 'day',
+        isDaytime: true,
+        lightFactor: 1.0,
+        cycleLength: 600,
+      },
+      enableDayNightCycle: true,
       history: [],
       isRewinding: false,
       rewindTime: 0,
@@ -508,6 +564,35 @@ export const useEcosystemStore = create<EcosystemStore>((set, get) => ({
 
   toggleTimeline: () => {
     set((prev) => ({ showTimeline: !prev.showTimeline }));
+  },
+
+  updateDayNightCycle: () => {
+    if (get().isRewinding) return;
+    set((prev) => {
+      if (!prev.enableDayNightCycle) return {};
+      const newTimeOfDay = (prev.dayNightCycle.timeOfDay + 1 / prev.dayNightCycle.cycleLength) % 1;
+      const dayPhase = calculateDayPhase(newTimeOfDay);
+      const lightFactor = calculateLightFactor(dayPhase, newTimeOfDay);
+      const isDaytime = dayPhase === 'dawn' || dayPhase === 'day';
+
+      return {
+        dayNightCycle: {
+          ...prev.dayNightCycle,
+          timeOfDay: newTimeOfDay,
+          dayPhase,
+          isDaytime,
+          lightFactor,
+        },
+      };
+    });
+  },
+
+  setDayNightCycleEnabled: (enabled) => {
+    set({ enableDayNightCycle: enabled });
+  },
+
+  toggleDayNightCycle: () => {
+    set((prev) => ({ enableDayNightCycle: !prev.enableDayNightCycle }));
   },
 
   getStats: () => {

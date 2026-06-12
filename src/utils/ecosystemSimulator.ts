@@ -136,6 +136,8 @@ export function simulateStep(
   organisms: Organism[],
   waterTemperature: number,
   lightIntensity: number,
+  isDaytime: boolean = true,
+  lightFactor: number = 1.0,
 ): {
   updates: { id: string; updates: Partial<Organism> }[];
   toRemove: string[];
@@ -182,29 +184,40 @@ export function simulateStep(
     const newPosition = organism.position.clone();
     const newVelocity = organism.velocity.clone();
 
+    const isNocturnal = species.isNocturnal || false;
+    const shouldSleep = !isDaytime && !isNocturnal;
+    const speedMultiplier = shouldSleep ? 0.15 : (isDaytime && isNocturnal ? 0.3 : 1.0);
+    const effectiveSpeed = species.speed * speedMultiplier;
+
     if (species.trophicLevel === 'decomposer') {
-      const deadOrganism = findNearestDead(organism, organisms, toRemove);
-
-      if (deadOrganism && energy < species.energyValue * 0.8) {
-        organismUpdate.state = 'hunting';
-        organismUpdate.targetId = deadOrganism.id;
-        const huntDir = new THREE.Vector3()
-          .subVectors(deadOrganism.position, organism.position)
-          .normalize();
-        newVelocity.lerp(huntDir.multiplyScalar(species.speed), 0.1);
-
-        if (distance(organism.position, deadOrganism.position) < species.size * 1.5) {
-          energy += getSpeciesById(deadOrganism.speciesId)?.energyValue || 20;
-          organismUpdate.state = 'eating';
-        }
+      if (shouldSleep) {
+        organismUpdate.state = 'sleeping';
+        newVelocity.multiplyScalar(0.85);
+        energy += 0.01;
       } else {
-        organismUpdate.state = 'wandering';
-        if (Math.random() < 0.02) {
-          newVelocity.set(
-            (Math.random() - 0.5) * species.speed,
-            (Math.random() - 0.5) * species.speed * 0.5,
-            (Math.random() - 0.5) * species.speed,
-          );
+        const deadOrganism = findNearestDead(organism, organisms, toRemove);
+
+        if (deadOrganism && energy < species.energyValue * 0.8) {
+          organismUpdate.state = 'hunting';
+          organismUpdate.targetId = deadOrganism.id;
+          const huntDir = new THREE.Vector3()
+            .subVectors(deadOrganism.position, organism.position)
+            .normalize();
+          newVelocity.lerp(huntDir.multiplyScalar(effectiveSpeed), 0.1);
+
+          if (distance(organism.position, deadOrganism.position) < species.size * 1.5) {
+            energy += getSpeciesById(deadOrganism.speciesId)?.energyValue || 20;
+            organismUpdate.state = 'eating';
+          }
+        } else {
+          organismUpdate.state = 'wandering';
+          if (Math.random() < 0.02) {
+            newVelocity.set(
+              (Math.random() - 0.5) * effectiveSpeed,
+              (Math.random() - 0.5) * effectiveSpeed * 0.5,
+              (Math.random() - 0.5) * effectiveSpeed,
+            );
+          }
         }
       }
 
@@ -241,37 +254,43 @@ export function simulateStep(
         organismUpdate.rotation = Math.atan2(newVelocity.x, newVelocity.z);
       }
     } else if (species.trophicLevel !== 'producer' && species.speed > 0) {
-      const prey = findNearestPrey(organism, organisms, eatenPrey);
-      const predator = findNearestPredator(organism, organisms);
-
-      if (predator) {
-        organismUpdate.state = 'fleeing';
-        const fleeDir = new THREE.Vector3()
-          .subVectors(organism.position, predator.position)
-          .normalize();
-        newVelocity.lerp(fleeDir.multiplyScalar(species.speed), 0.1);
-      } else if (prey && energy < species.energyValue * 0.7) {
-        organismUpdate.state = 'hunting';
-        organismUpdate.targetId = prey.id;
-        const huntDir = new THREE.Vector3()
-          .subVectors(prey.position, organism.position)
-          .normalize();
-        newVelocity.lerp(huntDir.multiplyScalar(species.speed), 0.1);
-
-        if (distance(organism.position, prey.position) < species.size * 0.8) {
-          energy += getSpeciesById(prey.speciesId)?.energyValue || 20;
-          eatenPrey.add(prey.id);
-          toRemove.add(prey.id);
-          organismUpdate.state = 'eating';
-        }
+      if (shouldSleep) {
+        organismUpdate.state = 'sleeping';
+        newVelocity.multiplyScalar(0.85);
+        energy += 0.01;
       } else {
-        organismUpdate.state = 'wandering';
-        if (Math.random() < 0.02) {
-          newVelocity.set(
-            (Math.random() - 0.5) * species.speed,
-            (Math.random() - 0.5) * species.speed * 0.5,
-            (Math.random() - 0.5) * species.speed,
-          );
+        const prey = findNearestPrey(organism, organisms, eatenPrey);
+        const predator = findNearestPredator(organism, organisms);
+
+        if (predator) {
+          organismUpdate.state = 'fleeing';
+          const fleeDir = new THREE.Vector3()
+            .subVectors(organism.position, predator.position)
+            .normalize();
+          newVelocity.lerp(fleeDir.multiplyScalar(effectiveSpeed), 0.1);
+        } else if (prey && energy < species.energyValue * 0.7) {
+          organismUpdate.state = 'hunting';
+          organismUpdate.targetId = prey.id;
+          const huntDir = new THREE.Vector3()
+            .subVectors(prey.position, organism.position)
+            .normalize();
+          newVelocity.lerp(huntDir.multiplyScalar(effectiveSpeed), 0.1);
+
+          if (distance(organism.position, prey.position) < species.size * 0.8) {
+            energy += getSpeciesById(prey.speciesId)?.energyValue || 20;
+            eatenPrey.add(prey.id);
+            toRemove.add(prey.id);
+            organismUpdate.state = 'eating';
+          }
+        } else {
+          organismUpdate.state = 'wandering';
+          if (Math.random() < 0.02) {
+            newVelocity.set(
+              (Math.random() - 0.5) * effectiveSpeed,
+              (Math.random() - 0.5) * effectiveSpeed * 0.5,
+              (Math.random() - 0.5) * effectiveSpeed,
+            );
+          }
         }
       }
 
@@ -308,11 +327,17 @@ export function simulateStep(
         organismUpdate.rotation = Math.atan2(newVelocity.x, newVelocity.z);
       }
     } else if (species.trophicLevel === 'producer') {
-      organismUpdate.state = 'idle';
-      const baseProduction = 0.1;
-      const lightBonus = envFitness.lightFactor;
-      const tempBonus = envFitness.temperatureFactor;
-      energy += baseProduction * lightBonus * tempBonus * 1.5;
+      if (!isDaytime) {
+        organismUpdate.state = 'sleeping';
+        const baseCost = 0.02;
+        energy -= baseCost;
+      } else {
+        organismUpdate.state = 'idle';
+        const baseProduction = 0.1;
+        const lightBonus = envFitness.lightFactor * lightFactor;
+        const tempBonus = envFitness.temperatureFactor;
+        energy += baseProduction * lightBonus * tempBonus * 1.5;
+      }
     }
 
     energy = clamp(energy, 0, species.energyValue * 1.5);

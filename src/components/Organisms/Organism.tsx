@@ -20,13 +20,19 @@ export function Organism3D({ organism, species }: Organism3DProps) {
   const ringInnerRef = useRef<THREE.Mesh>(null);
   const ringPulseRef = useRef<THREE.Mesh>(null);
   const particlesRef = useRef<THREE.Points>(null);
+  const glowRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
   const setSelectedOrganism = useEcosystemStore((s) => s.setSelectedOrganism);
   const selectedOrganismId = useEcosystemStore((s) => s.selectedOrganismId);
   const trackingOrganismId = useEcosystemStore((s) => s.trackingOrganismId);
   const showLabels = useEcosystemStore((s) => s.showLabels);
+  const dayNightCycle = useEcosystemStore((s) => s.dayNightCycle);
+  const enableDayNightCycle = useEcosystemStore((s) => s.enableDayNightCycle);
   const isSelected = selectedOrganismId === organism.id;
   const isTracking = trackingOrganismId === organism.id;
+  const isSleeping = organism.state === 'sleeping';
+  const isBioluminescent = species.isBioluminescent || false;
+  const bioluminescentColor = species.bioluminescentColor || species.color;
 
   const trackingParticles = useMemo(() => {
     const count = 24;
@@ -55,19 +61,34 @@ export function Organism3D({ organism, species }: Organism3DProps) {
         0.1,
       );
 
+      const sleepScale = isSleeping ? 0.92 : 1.0;
+      const sleepBob = isSleeping ? Math.sin(state.clock.elapsedTime * 0.8) * 0.003 : 0;
+
       if (species.trophicLevel === 'producer') {
-        groupRef.current.rotation.z = Math.sin(state.clock.elapsedTime * 1.5 + organism.position.x) * 0.08;
+        const swayAmount = isSleeping ? 0.02 : 0.08;
+        groupRef.current.rotation.z = Math.sin(state.clock.elapsedTime * (isSleeping ? 0.5 : 1.5) + organism.position.x) * swayAmount;
       } else if (species.speed > 0) {
-        const swimPhase = state.clock.elapsedTime * 4 + organism.position.x * 2;
-        groupRef.current.position.y += Math.sin(swimPhase) * 0.002;
+        const swimSpeed = isSleeping ? 1 : 4;
+        const swimAmplitude = isSleeping ? 0.0005 : 0.002;
+        const swimPhase = state.clock.elapsedTime * swimSpeed + organism.position.x * 2;
+        groupRef.current.position.y += Math.sin(swimPhase) * swimAmplitude + sleepBob;
       }
 
       const highlightMultiplier = isTracking ? 1.25 : hovered || isSelected ? 1.15 : 1;
-      const targetScale = organism.scale * highlightMultiplier;
+      const targetScale = organism.scale * highlightMultiplier * sleepScale;
       groupRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.15);
     }
 
     const t = state.clock.elapsedTime;
+    const nightFactor = enableDayNightCycle ? (1.0 - dayNightCycle.lightFactor) : 0;
+
+    if (isBioluminescent && glowRef.current) {
+      const glowMat = glowRef.current.material as THREE.MeshBasicMaterial;
+      const baseGlow = isBioluminescent ? nightFactor : 0;
+      const pulseGlow = Math.sin(t * 2 + organism.position.x * 3) * 0.15 + 0.85;
+      glowMat.opacity = baseGlow * pulseGlow * 0.6;
+      glowRef.current.scale.setScalar(1 + Math.sin(t * 1.5) * 0.05);
+    }
 
     if (isTracking) {
       if (ringOuterRef.current) {
@@ -149,6 +170,17 @@ export function Organism3D({ organism, species }: Organism3DProps) {
       onPointerOver={handlePointerOver}
       onPointerOut={handlePointerOut}
     >
+      {isBioluminescent && (
+        <mesh ref={glowRef}>
+          <sphereGeometry args={[species.size * 1.5, 16, 16]} />
+          <meshBasicMaterial
+            color={bioluminescentColor}
+            transparent
+            opacity={0}
+            side={THREE.BackSide}
+          />
+        </mesh>
+      )}
       {renderModel()}
 
       {(isSelected || hovered) && showLabels && (

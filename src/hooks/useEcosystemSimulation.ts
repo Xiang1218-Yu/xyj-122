@@ -219,6 +219,9 @@ export function useEcosystemSimulation() {
   const checkChallenges = useEcosystemStore((s) => s.checkChallenges);
   const waterTemperature = useEcosystemStore((s) => s.waterTemperature);
   const lightIntensity = useEcosystemStore((s) => s.lightIntensity);
+  const updateDayNightCycle = useEcosystemStore((s) => s.updateDayNightCycle);
+  const dayNightCycle = useEcosystemStore((s) => s.dayNightCycle);
+  const enableDayNightCycle = useEcosystemStore((s) => s.enableDayNightCycle);
 
   const SNAPSHOT_INTERVAL = 5;
 
@@ -256,8 +259,22 @@ export function useEcosystemSimulation() {
           }
         }
 
+        if (enableDayNightCycle) {
+          updateDayNightCycle();
+        }
+
+        const currentState = useEcosystemStore.getState();
+        const isDaytime = currentState.dayNightCycle.isDaytime;
+        const lightFactor = currentState.dayNightCycle.lightFactor;
+
         const organisms = state.organisms;
-        const { updates, toRemove, toAdd } = simulateStep(organisms, waterTemperature, lightIntensity);
+        const { updates, toRemove, toAdd } = simulateStep(
+          organisms,
+          waterTemperature,
+          lightIntensity,
+          enableDayNightCycle ? isDaytime : true,
+          enableDayNightCycle ? lightFactor : 1.0
+        );
 
         if (activeEvent) {
           const eventEffects = applyEventEffects(activeEvent, currentTime, state);
@@ -343,5 +360,5 @@ export function useEcosystemSimulation() {
         cancelAnimationFrame(frameRef.current);
       }
     };
-  }, [batchUpdateOrganisms, batchRemoveOrganisms, addOrganism, incrementTime, triggerEvent, clearEvent, setWaterColor, recordSnapshot, checkChallenges, waterTemperature, lightIntensity]);
+  }, [batchUpdateOrganisms, batchRemoveOrganisms, addOrganism, incrementTime, triggerEvent, clearEvent, setWaterColor, recordSnapshot, checkChallenges, waterTemperature, lightIntensity, updateDayNightCycle, enableDayNightCycle, dayNightCycle]);
 }
