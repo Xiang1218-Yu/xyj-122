@@ -1,48 +1,30 @@
-import { useMemo } from 'react';
 import { CollapsibleDraggablePanel } from '@/components/common/CollapsibleDraggablePanel';
-import { useEcosystemStore } from '@/store/useEcosystemStore';
-import { computeFoodChainRelations } from '@/utils/ecosystemSimulator';
-import { SPECIES, TROPHIC_LEVEL_COLORS, getSpeciesById } from '@/data/species';
+import { useFoodWeb } from '@/hooks/useFoodWeb';
+import { FoodWebNode } from './FoodWebNode';
+import { FoodWebEdge } from './FoodWebEdge';
+import { SpeciesRelationTooltip } from './SpeciesRelationTooltip';
+import { SPECIES } from '@/data/species';
 
 export function FoodWebPanel() {
-  const organisms = useEcosystemStore((s) => s.organisms);
+  const {
+    relations,
+    presentSpecies,
+    positions,
+    highlightedId,
+    hoveredSpeciesId,
+    handleNodeClick,
+    handleNodeHover,
+    getNodeState,
+    getEdgeState,
+    getSpeciesRelations,
+    getSpeciesInfo,
+    getTrophicColor,
+  } = useFoodWeb();
 
-  const { relations, presentSpecies } = useMemo(() => {
-    const rels = computeFoodChainRelations(organisms);
-    const species = [...new Set(organisms.map((o) => o.speciesId))];
-    return { relations: rels, presentSpecies: species };
-  }, [organisms]);
-
-  const positions = useMemo(() => {
-    const pos: Record<string, { x: number; y: number }> = {};
-    const byLevel: Record<string, string[]> = {
-      producer: [],
-      herbivore: [],
-      omnivore: [],
-      carnivore: [],
-      decomposer: [],
-    };
-
-    presentSpecies.forEach((id) => {
-      const sp = getSpeciesById(id);
-      if (sp) byLevel[sp.trophicLevel].push(id);
-    });
-
-    const levels = ['producer', 'decomposer', 'herbivore', 'omnivore', 'carnivore'];
-    const width = 200;
-    const height = 160;
-
-    levels.forEach((level, levelIdx) => {
-      const items = byLevel[level];
-      const y = ((levelIdx + 0.5) / levels.length) * height + 10;
-      items.forEach((id, itemIdx) => {
-        const x = ((itemIdx + 0.5) / items.length) * width + 10;
-        pos[id] = { x, y };
-      });
-    });
-
-    return pos;
-  }, [presentSpecies]);
+  const hasActiveHighlight = highlightedId !== null;
+  const hoveredSpecies = hoveredSpeciesId ? getSpeciesInfo(hoveredSpeciesId) : null;
+  const hoveredPosition = hoveredSpeciesId ? positions[hoveredSpeciesId] : null;
+  const hoveredRelations = hoveredSpeciesId ? getSpeciesRelations(hoveredSpeciesId) : null;
 
   return (
     <CollapsibleDraggablePanel
@@ -66,103 +48,82 @@ export function FoodWebPanel() {
             const to = positions[rel.predatorId];
             if (!from || !to) return null;
 
-            const sp = getSpeciesById(rel.predatorId);
+            const sp = getSpeciesInfo(rel.predatorId);
+            const edgeState = getEdgeState(rel);
+
             return (
-              <g key={idx}>
-                <defs>
-                  <marker
-                    id={`arrow-${idx}`}
-                    markerWidth="6"
-                    markerHeight="6"
-                    refX="5"
-                    refY="3"
-                    orient="auto"
-                  >
-                    <path
-                      d="M0,0 L6,3 L0,6"
-                      fill={sp?.color || '#fff'}
-                      opacity="0.6"
-                    />
-                  </marker>
-                </defs>
-                <line
-                  x1={from.x}
-                  y1={from.y}
-                  x2={to.x}
-                  y2={to.y}
-                  stroke={sp?.color || '#fff'}
-                  strokeWidth="2"
-                  opacity="0.5"
-                  markerEnd={`url(#arrow-${idx})`}
-                >
-                  <animate
-                    attributeName="stroke-dasharray"
-                    from="4 4"
-                    to="8 8"
-                    dur="1s"
-                    repeatCount="indefinite"
-                  />
-                </line>
-              </g>
+              <FoodWebEdge
+                key={idx}
+                index={idx}
+                fromPosition={from}
+                toPosition={to}
+                predatorColor={sp?.color || '#fff'}
+                isHighlighted={edgeState.isHighlighted}
+                hasActiveHighlight={edgeState.hasHighlight}
+              />
             );
           })}
 
           {presentSpecies.map((id) => {
-            const sp = getSpeciesById(id);
+            const sp = getSpeciesInfo(id);
             const pos = positions[id];
             if (!sp || !pos) return null;
 
+            const nodeState = getNodeState(id);
+
             return (
-              <g key={id}>
-                <circle
-                  cx={pos.x}
-                  cy={pos.y}
-                  r="16"
-                  fill={TROPHIC_LEVEL_COLORS[sp.trophicLevel]}
-                  opacity="0.9"
-                >
-                  <animate
-                    attributeName="r"
-                    values="16;18;16"
-                    dur="2s"
-                    repeatCount="indefinite"
-                  />
-                </circle>
-                <text
-                  x={pos.x}
-                  y={pos.y + 1}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  fontSize="14"
-                >
-                  {sp.emoji}
-                </text>
-                <text
-                  x={pos.x}
-                  y={pos.y + 28}
-                  textAnchor="middle"
-                  fontSize="9"
-                  fill="white"
-                  opacity="0.8"
-                >
-                  {sp.name}
-                </text>
-              </g>
+              <FoodWebNode
+                key={id}
+                species={sp}
+                position={pos}
+                isSelected={nodeState.isSelected}
+                isHovered={nodeState.isHovered}
+                isHighlighted={nodeState.isHighlighted}
+                hasActiveHighlight={hasActiveHighlight}
+                trophicColor={getTrophicColor(sp.trophicLevel)}
+                onClick={() => handleNodeClick(id)}
+                onMouseEnter={() => handleNodeHover(id)}
+                onMouseLeave={() => handleNodeHover(null)}
+              />
             );
           })}
+
+          {hoveredSpecies && hoveredPosition && hoveredRelations && (
+            <SpeciesRelationTooltip
+              species={hoveredSpecies}
+              preys={hoveredRelations.preys}
+              predators={hoveredRelations.predators}
+              position={hoveredPosition}
+            />
+          )}
         </svg>
       )}
 
       <div className="mt-2 flex flex-wrap gap-2">
-        {SPECIES.filter((s) => presentSpecies.includes(s.id)).map((sp) => (
-          <div
-            key={sp.id}
-            className="text-[10px] px-2 py-0.5 rounded-full text-white"
-            style={{ backgroundColor: sp.color + '60' }}
-          >
-            {sp.emoji} {sp.name}
-          </div>
-        ))}
+        {SPECIES.filter((s) => presentSpecies.includes(s.id)).map((sp) => {
+          const isHighlighted = hasActiveHighlight
+            ? highlightedId === sp.id ||
+              (hoveredRelations &&
+                (hoveredRelations.preys.includes(sp.id) ||
+                  hoveredRelations.predators.includes(sp.id)))
+            : true;
+
+          return (
+            <div
+              key={sp.id}
+              className="text-[10px] px-2 py-0.5 rounded-full text-white transition-opacity duration-200 cursor-pointer"
+              style={{
+                backgroundColor: sp.color + '60',
+                opacity: isHighlighted ? 1 : 0.3,
+              }}
+              onClick={() => handleNodeClick(sp.id)}
+              onMouseEnter={() => handleNodeHover(sp.id)}
+              onMouseLeave={() => handleNodeHover(null)}
+            >
+              {sp.emoji} {sp.name}
+            </div>
+          );
+        })}
       </div>
     </CollapsibleDraggablePanel>
   );
