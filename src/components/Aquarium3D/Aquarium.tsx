@@ -8,6 +8,7 @@ import { useEcosystemStore } from '@/store/useEcosystemStore';
 import { AQUARIUM_BOUNDS } from '@/store/useEcosystemStore';
 import { getSpeciesById } from '@/data/species';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
+import { PerfDataCollector } from '@/components/Performance/PerfDataCollector';
 
 function Glass() {
   const thickness = 0.08;
@@ -509,6 +510,8 @@ export function Aquarium3D({ onAquariumClick }: Aquarium3DProps) {
       </EffectComposer>
 
       <TrackingCameraController controlsRef={controlsRef} />
+
+      {import.meta.env.DEV && <PerfDataCollector />}
 
       <OrbitControls
         ref={controlsRef}

@@ -1,25 +1,30 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import * as THREE from 'three';
 import { Aquarium3D } from '@/components/Aquarium3D/Aquarium';
 import { SpeciesToolbar } from '@/components/UI/SpeciesToolbar';
 import { EcosystemStats } from '@/components/UI/EcosystemStats';
-import { FoodWebPanel } from '@/components/UI/FoodWebPanel';
-import { SpeciesInfoCard } from '@/components/UI/SpeciesInfoCard';
 import { ControlButtons } from '@/components/UI/ControlButtons';
 import { PresetSelector } from '@/components/UI/PresetSelector';
 import { Timeline } from '@/components/UI/Timeline';
-import { EnvironmentSliders } from '@/components/UI/EnvironmentSliders';
-import { ChallengePanel } from '@/components/UI/ChallengePanel';
-import { BadgeCollection } from '@/components/UI/BadgeCollection';
-import { PopulationTrendChart } from '@/components/UI/PopulationTrendChart';
-import { ChallengeSuccessModal } from '@/components/UI/ChallengeSuccessModal';
-import { TeachingTipCard } from '@/components/UI/TeachingTipCard';
 import { useEcosystemSimulation } from '@/hooks/useEcosystemSimulation';
 import { useEcosystemStore, AQUARIUM_BOUNDS } from '@/store/useEcosystemStore';
 import { GlassCard } from '@/components/common/GlassCard';
 import { getSpeciesById } from '@/data/species';
 import type { EcologicalEvent } from '@/types/ecosystem';
 import { Crosshair, X } from 'lucide-react';
+
+const FoodWebPanel = lazy(() => import('@/components/UI/FoodWebPanel').then(m => ({ default: m.FoodWebPanel })));
+const SpeciesInfoCard = lazy(() => import('@/components/UI/SpeciesInfoCard').then(m => ({ default: m.SpeciesInfoCard })));
+const EnvironmentSliders = lazy(() => import('@/components/UI/EnvironmentSliders').then(m => ({ default: m.EnvironmentSliders })));
+const ChallengePanel = lazy(() => import('@/components/UI/ChallengePanel').then(m => ({ default: m.ChallengePanel })));
+const BadgeCollection = lazy(() => import('@/components/UI/BadgeCollection').then(m => ({ default: m.BadgeCollection })));
+const PopulationTrendChart = lazy(() => import('@/components/UI/PopulationTrendChart').then(m => ({ default: m.PopulationTrendChart })));
+const ChallengeSuccessModal = lazy(() => import('@/components/UI/ChallengeSuccessModal').then(m => ({ default: m.ChallengeSuccessModal })));
+const TeachingTipCard = lazy(() => import('@/components/UI/TeachingTipCard').then(m => ({ default: m.TeachingTipCard })));
+
+const PerfMonitorPanel = import.meta.env.DEV
+  ? lazy(() => import('@/components/Performance/PerfMonitorPanel').then(m => ({ default: m.PerfMonitorPanel })))
+  : null;
 
 const EVENT_EMOJIS: Record<string, string> = {
   red_tide: '🌊',
@@ -252,15 +257,19 @@ export function MainPage() {
       <PresetSelector />
       <SpeciesToolbar />
       <EcosystemStats />
-      <PopulationTrendChart />
-      <FoodWebPanel />
-      <SpeciesInfoCard />
       <Timeline />
-      <EnvironmentSliders />
-      <ChallengePanel />
-      <BadgeCollection />
-      <ChallengeSuccessModal />
-      <TeachingTipCard />
+
+      <Suspense fallback={null}>
+        <PopulationTrendChart />
+        <FoodWebPanel />
+        <SpeciesInfoCard />
+        <EnvironmentSliders />
+        <ChallengePanel />
+        <BadgeCollection />
+        <ChallengeSuccessModal />
+        <TeachingTipCard />
+        {PerfMonitorPanel && <PerfMonitorPanel position="top-right" />}
+      </Suspense>
 
       {selectedSpeciesId && (
         <div className="absolute inset-0 pointer-events-none z-5">
